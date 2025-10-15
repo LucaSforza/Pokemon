@@ -9,6 +9,7 @@ input/
 .$*
 
 venv/
+chall/
 
 *.db
 

@@ -23,10 +23,10 @@ def insert_battle(cur: sqlite3.Cursor, battle: dict):
         load_pokemon(cur, pokemon)
     cur.execute("INSERT INTO Team DEFAULT VALUES")
     team_id = cur.lastrowid
-    fields = ("result","player","p2_lead_pokemon","p2_pokeon_level")
+    fields = ("id","result","p2_lead_pokemon","p2_pokeon_level","team")
     cur.execute(
         f"INSERT INTO Battle ({','.join(fields)}) VALUES ({','.join('?' for _ in fields)})",
-        (player_won, team_id, battle["p2_lead_pokemon"]["name"], battle["p2_lead_pokemon"]["level"])
+        (battle["battle_idg"], player_won, battle["p2_lead_details"]["name"], battle["p2_lead_details"]["level"], team_id)
     )
     
 

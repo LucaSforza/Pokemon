@@ -4,7 +4,7 @@
 -- TABELLA TEAM
 -- =====================================================
 CREATE TABLE Team (
-    id SERIAL PRIMARY KEY
+    id INTEGER PRIMARY KEY AUTOINCREMENT
 );
 
 -- =====================================================
@@ -24,7 +24,7 @@ CREATE TABLE Pokemon (
 -- TABELLA LEVEL
 -- =====================================================
 CREATE TABLE Level (
-    id SERIAL PRIMARY KEY,
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
     pokemon String NOT NULL,
     team IntegerGEZ NOT NULL,
     level IntegerGEZ NOT NULL,
@@ -38,7 +38,6 @@ CREATE TABLE Level (
 CREATE TABLE Battle (
     id IntegerGEZ PRIMARY KEY,
     result BOOLEAN,
-    player IntegerGEZ NOT NULL,
     p2_lead_pokemon String NOT NULL,
     p2_pokeon_level IntegerGEZ NOT NULL,
     team IntegerGEZ NOT NULL,
@@ -50,7 +49,7 @@ CREATE TABLE Battle (
 -- TABELLA DATASET
 -- =====================================================
 CREATE TABLE Dataset (
-    id SERIAL PRIMARY KEY,
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
     type DatasetType NOT NULL
 );
 
@@ -100,7 +99,7 @@ CREATE TABLE PokemonMove (
 -- TABELLA PokemonState
 -- =====================================================
 CREATE TABLE PokemonState (
-    id SERIAL PRIMARY KEY,
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
     hp_pct IntegerGEZ NOT NULL,
     boost_atk IntegerGEZ NOT NULL,
     boost_def IntegerGEZ NOT NULL,
@@ -117,7 +116,7 @@ CREATE TABLE PokemonState (
 -- TABELLA Turn
 -- =====================================================
 CREATE TABLE Turn (
-    id IntegerGEZ NOT NULL,
+    id IntegerGEZ NOT NULL ,
     battle IntegerGEZ NOT NULL,
     p1_state IntegerGEZ NOT NULL,
     p2_state IntegerGEZ NOT NULL,
