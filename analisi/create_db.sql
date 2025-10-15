@@ -94,7 +94,12 @@ CREATE TABLE PokemonMove (
     FOREIGN KEY (type) REFERENCES MoveType(name),
     FOREIGN KEY (category) REFERENCES MoveCategory(name)
 );
-
+-- =====================================================
+-- TABELLA Status
+-- =====================================================
+CREATE TABLE Status (
+    name String PRIMARY KEY
+);
 -- =====================================================
 -- TABELLA PokemonState
 -- =====================================================
@@ -107,7 +112,9 @@ CREATE TABLE PokemonState (
     boost_spd IntegerGEZ NOT NULL,
     boost_spe IntegerGEZ NOT NULL,
     pokemon String NOT NULL,
+    status String NOT NULL,
     pok_move String,
+    FOREIGN KEY (status) REFERENCES Status(name)
     FOREIGN KEY (pokemon) REFERENCES Pokemon(name)
     -- FOREIGN KEY (pok_move) REFERENCES PokemonMove(name)
 );

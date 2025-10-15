@@ -9,6 +9,9 @@ Pokemon = dict[str, Any]
 PokemonDict = dict[str, Any]
 Team = list[Pokemon]
 Battle = dict[str, Any]
+Turn = dict[str, Any]
+State = dict[str, Any]
+Move = dict[str, Any]
 
 class DataProcessor:
     pass
