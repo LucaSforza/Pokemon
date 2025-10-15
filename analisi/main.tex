@@ -1,0 +1,31 @@
+\documentclass{paper}
+
+\usepackage{amsfonts}
+\usepackage{amsmath}
+
+\begin{document}
+    \section{Begin}
+
+    Sia $n$ il numero di partite. $y_i$ è l'outcome di quella partita.
+
+    $\text{Pokemon}_i^j$ sono le statistiche del Pokemon $j$ nella partita $i$ che conosco.
+
+    $\text{PokemonState}_i^j$ è lo stato del pokemon $j$ nella partita $i$ alla fine dei 30 turni.
+
+    $\text{PokemonAdversary}_i^j$ sono le statistiche del Pokemon dell'avversario $j$ nella partita $i$ che conosco.
+
+    $\text{PokemonStateAdversary}_i^j$ è lo stato del Pokemon dell'avversario $j$ nella partita $i$ che conosco.
+
+    Sia $x_i$ le feature della partita $i$.
+
+\begin{equation}
+    x_i = <\text{Pokemon}_i^1, \dots, \text{Pokemon}_i^6, \text{PokemonState}_i^1, \dots, \text{PokemonState}_i^6,\text{PokemonAdversary}_i^1, \dots, \text{PokemonAdversary}_i^6, \text{PokemonAdversaryState}_i^1, \dots \text{PokemonAdversaryState}_i^6,>
+\end{equation}
+
+\begin{equation}
+    \mathcal{D} = \{ (<x_i, y_i) \mid i \in [1,n]\}
+\end{equation}
+
+
+
+\end{document}

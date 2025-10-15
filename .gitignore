@@ -1,0 +1,15 @@
+*.aux
+*.fdb*
+*.fls
+*.log
+*.gz
+
+input/
+
+.$*
+
+venv/
+
+*.db
+
+sw_*
