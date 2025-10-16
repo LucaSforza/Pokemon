@@ -45,10 +45,11 @@ def get_teams(cur: sqlite3.Cursor, game_id: int, _set: str) -> tuple[pd.DataFram
     cur.execute("""
     SELECT t.battle as id, p.name,p.base_hp,p.base_atk, p.base_def, p.base_spa,p.base_spd, p.base_spe 
     FROM Turn as t, PokemonState as ps, Pokemon as p, Battle as b
-    WHERE t.battle = ? and b.id = t.battle and t.p2_state = ps.id and ps.pokemon = p.name
+    WHERE t.battle = ? and b.id = t.battle and t.p2_state = ps.id and (ps.pokemon = p.name or b.p2_lead_pokemon = p.name)
     GROUP BY p.name
     """, (id_battle,))
     team2 = into_dataframe(cur)
+    
     return team1, team2
     # TODO: add p2_lead_pokemon
     
