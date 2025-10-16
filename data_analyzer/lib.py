@@ -41,19 +41,21 @@ def get_teams(cur: sqlite3.Cursor, game_id: int, _set: str) -> tuple[pd.DataFram
     id_battle = cur.fetchone()[0]
     
     cur.execute("""
-    SELECT p.name,p.base_hp,p.base_atk, p.base_def, p.base_spa,p.base_spd, p.base_spe
+    SELECT p.*
     FROM TeamP1 as tp,Pokemon as p, Battle as b
     WHERE tp.battle = b.id and tp.pokemon = p.name and b.id = ?
         """, (id_battle,))
     team1 = into_dataframe(cur)
     
     cur.execute("""
-    SELECT p.name,p.base_hp,p.base_atk, p.base_def, p.base_spa,p.base_spd, p.base_spe 
+    SELECT p.*
     FROM Turn as t, PokemonState as ps, Pokemon as p, Battle as b
     WHERE t.battle = ? and b.id = t.battle and t.p2_state = ps.id and (ps.pokemon = p.name or b.p2_lead_pokemon = p.name)
     GROUP BY p.name
     """, (id_battle,))
     team2 = into_dataframe(cur)
+    
+    print(team2)
     
     return team1, team2
 
@@ -91,7 +93,7 @@ def check_status_pokemon(cur: sqlite3.Cursor, team: pd.DataFrame, primary: bool,
     
     string = "p1_state" if primary else "p2_state"
     
-    for name in [ team.iloc[i]["name"] for i in range(len(team))]:
+    for name in [team.iloc[i]["name"] for i in range(len(team))]:
         cur.execute(
         f"""
             SELECT MAX(t.id) AS turn, ps.*
@@ -104,3 +106,31 @@ def check_status_pokemon(cur: sqlite3.Cursor, team: pd.DataFrame, primary: bool,
         if not frame["turn"].isna().all():
             results.append(frame)
     return pd.concat(results, ignore_index=True)
+
+def find_id_battle(cur: sqlite3.Cursor, battle_id: int, _set: str) -> int:
+    cur.execute("SELECT id FROM Dataset WHERE type = ?", (_set,))
+    id_dataset = cur.fetchone()[0]
+    cur.execute("SELECT b.id FROM bat_dat, Battle as b WHERE dataset = ? and b.id = bat_dat.battle and b.battle_id = ?", (id_dataset,battle_id))
+    id_battle = cur.fetchone()[0]
+    return id_battle
+
+def print_battle(cur: sqlite3.Cursor, id_battle: int) -> None:
+    cur.execute(
+        """
+        SELECT t.id as turn, ps.*
+        FROM Turn as t, PokemonState as ps
+        WHERE t.battle = ? and t.p1_state = ps.id
+        """, (id_battle,)
+    )
+    
+    print(into_dataframe(cur))
+    
+    cur.execute(
+        """
+        SELECT t.id as turn, ps.*
+        FROM Turn as t, PokemonState as ps
+        WHERE t.battle = ? and t.p2_state = ps.id
+        """, (id_battle,)
+    )
+    
+    print(into_dataframe(cur))

@@ -64,8 +64,8 @@ def insert_turn(cur: sqlite3.Cursor, turn: Turn, battle_id : int):
     turn_id = turn["turn"]
     p1_move_details: Move | None = turn["p1_move_details"]
     p1_pokemon_state: State = turn["p1_pokemon_state"]
-    p2_move_details: Move | None = turn["p1_move_details"]
-    p2_pokem_state: State = turn["p1_pokemon_state"]
+    p2_move_details: Move | None = turn["p2_move_details"]
+    p2_pokem_state: State = turn["p2_pokemon_state"]
 
     p1_state_id = insert_state_move(cur, p1_pokemon_state, p1_move_details)
     p2_state_id = insert_state_move(cur, p2_pokem_state, p2_move_details)

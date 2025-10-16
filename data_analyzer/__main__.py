@@ -70,10 +70,22 @@ def main():
             team1, team2 = get_teams(cur, id_battle, _set)
             print(f"Team1:\n{team1}")
             print(f"Team2:\n{team2}")
+            id_battle = find_id_battle(cur, id_battle, _set)
             status1 = check_status_pokemon(cur, team1,True, id_battle)
             status2 = check_status_pokemon(cur, team2,False, id_battle)
             print(f"Status1:\n{status1}")
             print(f"Status2:\n{status2}")
+            
+    elif command == "print_battle":
+        id_battle = int(sys.argv[3])
+        _set = sys.argv[4]
+        with sqlite3.connect(database_path) as conn:
+            conn.row_factory = sqlite3.Row
+            cur = conn.cursor()
+            id_battle = find_id_battle(cur, id_battle, _set)
+            print(f"id_battle = {id_battle}")
+            print_battle(cur, id_battle)
+            
             
     else:
         print(f"[ERROR] unknown command {command}")
