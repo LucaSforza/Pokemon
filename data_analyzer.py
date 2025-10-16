@@ -17,7 +17,7 @@ class DataProcessor:
     pass
 
 def print_team(team: Team) -> None:
-    print(f"Team 1: len: {len(team)}\n{json.dumps(team, indent=2)}")
+    print(f"Team: len: {len(team)}\n{json.dumps(team, indent=2)}")
 
 def get_pokemons(paths: list[str]) -> PokemonDict:
     pokemons: PokemonDict = {}
