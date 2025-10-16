@@ -55,8 +55,7 @@ def get_teams(cur: sqlite3.Cursor, game_id: int, _set: str) -> tuple[pd.DataFram
     # TODO: add p2_lead_pokemon
 
 
-def getTeamPokemonAvg(db: sqlite3.Connection, team_id: int) -> pd.DataFrame:
-    cur = db.cursor()
+def get_team_pokemon_avg(cur: sqlite3.Cursor, team_id: int) -> pd.DataFrame:
 
     cur.execute("""
     SELECT Pkm.name, Pkm.base_hp, Pkm.base_atk, Pkm.base_def, Pkm.base_spa, Pkm.base_spd, Pkm.base_spe 
