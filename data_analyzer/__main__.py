@@ -26,7 +26,7 @@ def main():
         with sqlite3.connect(database_path) as conn:
             conn.row_factory = sqlite3.Row
             pokemons = get_pokemons(conn.cursor())
-            print(json.dumps(pokemons,indent=2))
+            print(pokemons)
     elif command == "get_teams":
         print("[TODO]")
         exit(1)
@@ -38,7 +38,6 @@ def main():
                 print(f"[ERROR] the set {_set} doesn't exists")
                 usage()
                 exit(1)
-            training = _set == "Train"
         except IndexError:
             print("[ERROR] not enough arguments")
             usage()
@@ -50,7 +49,7 @@ def main():
         team1,team2 = None, None
         with sqlite3.connect(database_path) as conn:
             conn.row_factory = sqlite3.Row
-            team1,team2 = get_teams(conn.cursor(), game_id, training)
+            team1,team2 = get_teams(conn.cursor(), game_id, _set)
         print_team(team1)
         print_team(team2)
     else:
