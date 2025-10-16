@@ -36,14 +36,14 @@ def get_teams(cur: sqlite3.Cursor, game_id: int, _set: str) -> tuple[pd.DataFram
     id_battle = cur.fetchone()[0]
     
     cur.execute("""
-    SELECT b.id,p.name,p.base_hp,p.base_atk, p.base_def, p.base_spa,p.base_spd, p.base_spe
+    SELECT p.name,p.base_hp,p.base_atk, p.base_def, p.base_spa,p.base_spd, p.base_spe
     FROM Level as l,Pokemon as p, Battle as b, Team as t
     WHERE t.id = b.team and l.team = t.id and l.pokemon = p.name and b.id = ?
         """, (id_battle,))
     team1 = into_dataframe(cur)
     
     cur.execute("""
-    SELECT t.battle as id, p.name,p.base_hp,p.base_atk, p.base_def, p.base_spa,p.base_spd, p.base_spe 
+    SELECT p.name,p.base_hp,p.base_atk, p.base_def, p.base_spa,p.base_spd, p.base_spe 
     FROM Turn as t, PokemonState as ps, Pokemon as p, Battle as b
     WHERE t.battle = ? and b.id = t.battle and t.p2_state = ps.id and (ps.pokemon = p.name or b.p2_lead_pokemon = p.name)
     GROUP BY p.name
@@ -52,12 +52,23 @@ def get_teams(cur: sqlite3.Cursor, game_id: int, _set: str) -> tuple[pd.DataFram
     
     return team1, team2
 
+def get_teams_complete(cur: sqlite3.Cursor, game_id: int, _set: str) -> tuple[pd.DataFrame, pd.DataFrame]:
+    team1, team2 = get_teams(cur,game_id, _set)
+    missing_pkm = 6 - len(team2)
+    avg_pok = get_avg_pokemon(cur)
+    avg_pok["name"] = "avg"
+    team2 = pd.concat([team2] + [avg_pok]*missing_pkm, ignore_index=True)
+    return team1, team2
+
 def get_avg_pokemon(cur: sqlite3.Cursor) -> pd.DataFrame:
     cur.execute("""
     SELECT avg(Pkm.base_hp) as base_hp, avg(Pkm.base_atk) as base_atk, avg(Pkm.base_def) as base_def, avg(Pkm.base_spa) as base_spa, avg(Pkm.base_spd) as base_spd, avg(Pkm.base_spe) as base_spe
     FROM Pokemon AS Pkm
     """)
     return into_dataframe(cur)
+
+def get_team_pokemon_avg_pd(team: pd.DataFrame) -> pd.DataFrame:
+    return pd.DataFrame(team.drop(columns=["name"], errors='ignore').mean()).T
 
 def get_team_pokemon_avg(cur: sqlite3.Cursor, team_id: int) -> pd.DataFrame:
 
