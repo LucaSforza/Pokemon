@@ -52,36 +52,12 @@ def get_teams(cur: sqlite3.Cursor, game_id: int, _set: str) -> tuple[pd.DataFram
     
     return team1, team2
 
-    # TODO: add p2_lead_pokemon
-
-
 def get_team_pokemon_avg(cur: sqlite3.Cursor, team_id: int) -> pd.DataFrame:
 
     cur.execute("""
-    SELECT Pkm.name, Pkm.base_hp, Pkm.base_atk, Pkm.base_def, Pkm.base_spa, Pkm.base_spd, Pkm.base_spe 
+    SELECT avg(Pkm.base_hp) as base_hp, avg(Pkm.base_atk) as base_atk, avg(Pkm.base_def) as base_def, avg(Pkm.base_spa) as base_spa, avg(Pkm.base_spd) as base_spd, avg(Pkm.base_spe) as base_spe
     FROM Pokemon AS Pkm, Level, Team
     WHERE Team.id = ? AND Level.team = Team.id AND Pkm.name = Level.pokemon
     """, (team_id,))
 
-    rows = cur.fetchall()
-    pokemonStat = []
-
-    for row in rows:
-        name, p_hp, p_atk, p_def, p_spa, p_spd, p_spe = row
-        pokemonStat.append((name, p_hp, p_atk, p_def, p_spa, p_spd, p_spe))
-        print(f"- {name:<12} | HP:{p_hp:>3} | ATK:{p_atk:>3} | DEF:{p_def:>3} | SPA:{p_spa:>3} | SPD:{p_spd:>3} | SPE:{p_spe:>3}")
-    
-    avg_stats = [sum(stats[i] for stats in pokemonStat) / len(pokemonStat) for i in range(1, 7)]
-    print(f"\nMedia Statistiche Team:")
-    print(f"HP: {avg_stats[0]:.2f} | ATK: {avg_stats[1]:.2f} | DEF: {avg_stats[2]:.2f} | SPA: {avg_stats[3]:.2f} | SPD: {avg_stats[4]:.2f} | SPE: {avg_stats[5]:.2f}")
-    
-    # Creazione DataFrame con le medie
-    df = pd.DataFrame({
-        "Stat": ["HP", "ATK", "DEF", "SPA", "SPD", "SPE"],
-        "Average": avg_stats
-    })
-
-    # Aggiungo una riga finale con la media complessiva
-    df.loc[len(df.index)] = ["MEAN", sum(avg_stats) / len(avg_stats)]
-
-    return df
+    return into_dataframe(cur)

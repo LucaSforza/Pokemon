@@ -49,7 +49,13 @@ def main():
             conn.row_factory = sqlite3.Row
             team1, team2 = get_teams(conn.cursor(), game_id, _set)
             print(f"Team1:\n{team1}")
-            print(f"Team2:\n{team2}") 
+            print(f"Team2:\n{team2}")
+    elif command == "avg":
+        database_path = sys.argv[2]
+        team = int(sys.argv[3])
+        with sqlite3.connect(database_path) as conn:
+            avg = get_team_pokemon_avg(conn.cursor(), team)
+            print(avg)
     else:
         print(f"[ERROR] unknown command {command}")
         usage()
