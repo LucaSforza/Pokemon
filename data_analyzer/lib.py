@@ -25,6 +25,11 @@ def into_dataframe(cur: sqlite3.Cursor) -> pd.DataFrame:
     cols = [desc[0] for desc in cur.description]
     return pd.DataFrame(rows, columns=cols)
 
+def into_dataframe_last(cur: sqlite3.Cursor) -> pd.DataFrame:
+    row = cur.fetchall()[-1]
+    cols = [desc[0] for desc in cur.description]
+    return pd.DataFrame([row], columns=cols)
+
 def get_pokemons(cur: sqlite3.Cursor) -> list[Pokemon]:
     cur.execute("SELECT * FROM Pokemon")
     return into_dataframe(cur)
@@ -80,14 +85,22 @@ def get_team_pokemon_avg(cur: sqlite3.Cursor, id_battle: int) -> pd.DataFrame:
 
     return into_dataframe(cur)
 
-def check_status_pokemon(cur: sqlite3.Cursor, team1: pd.DataFrame, team2: pd.DataFrame, id_battle: int) -> pd.DataFrame:
-    cur.execute(
-    """
-        SELECT ps.*, p.*
-        FROM Turn as t, PokemonState as ps, Pokemon as p
-        WHERE t.battle = ? and t.p1_state = ps.id and p.name = ps.pokemon and 
-        ORDER BY t.id asc
-    """, (id_battle,)
-    )
+def check_status_pokemon(cur: sqlite3.Cursor, team: pd.DataFrame, primary: bool,id_battle: int) -> pd.DataFrame:
     
-    cur.fetchall()[-1]
+    results = []
+    
+    string = "p1_state" if primary else "p2_state"
+    
+    for name in [ team.iloc[i]["name"] for i in range(len(team))]:
+        cur.execute(
+        f"""
+            SELECT MAX(t.id) AS turn, ps.*
+            FROM Turn as t, PokemonState as ps
+            WHERE t.battle = ? and ps.pokemon = ? and t.{string} = ps.id
+        """,
+        (id_battle, name)
+        )
+        frame = into_dataframe(cur)
+        if not frame["turn"].isna().all():
+            results.append(frame)
+    return pd.concat(results, ignore_index=True)

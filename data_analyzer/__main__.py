@@ -16,20 +16,19 @@ def main():
         print("[ERROR] no command")
         usage()
         exit(1)
+    try:
+        database_path = sys.argv[2]
+    except IndexError:
+        print("[ERROR] no db specified")
+        usage()
+        exit(1)
     if command == "get_pokemons":
-        try:
-            database_path = sys.argv[2]
-        except IndexError:
-            print("[ERROR] not enough arguments")
-            usage()
-            exit(1)
         with sqlite3.connect(database_path) as conn:
             conn.row_factory = sqlite3.Row
             pokemons = get_pokemons(conn.cursor())
             print(pokemons)
     elif command == "get_teams":
         try:
-            database_path = sys.argv[2]
             game_id = int(sys.argv[3])
             _set = sys.argv[4]
             if _set not in ["Test", "Train"]:
@@ -55,13 +54,27 @@ def main():
             print(f"Avg Team1:\n{get_team_pokemon_avg_pd(team1)}")
             print(f"Avg Team2:\n{get_team_pokemon_avg_pd(team2)}")
     elif command == "avg":
-        database_path = sys.argv[2]
         id_battle = int(sys.argv[3])
         with sqlite3.connect(database_path) as conn:
+            conn.row_factory = sqlite3.Row
             avg = get_team_pokemon_avg(conn.cursor(), id_battle)
             print(avg)
             all_avg = get_avg_pokemon(conn.cursor())
             print(all_avg)
+    elif command == "pokemon_state":
+        id_battle = int(sys.argv[3])
+        _set = sys.argv[4]
+        with sqlite3.connect(database_path) as conn:
+            conn.row_factory = sqlite3.Row
+            cur = conn.cursor()
+            team1, team2 = get_teams(cur, id_battle, _set)
+            print(f"Team1:\n{team1}")
+            print(f"Team2:\n{team2}")
+            status1 = check_status_pokemon(cur, team1,True, id_battle)
+            status2 = check_status_pokemon(cur, team2,False, id_battle)
+            print(f"Status1:\n{status1}")
+            print(f"Status2:\n{status2}")
+            
     else:
         print(f"[ERROR] unknown command {command}")
         usage()
