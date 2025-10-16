@@ -78,11 +78,11 @@ def insert_turn(cur: sqlite3.Cursor, turn: Turn, battle_id : int):
 
 
 
-def load_level(cur: sqlite3.Cursor, pokemon: Pokemon, team_id: int):
-    fields = ("pokemon", "team", "level")
-    values = (pokemon["name"], team_id, pokemon["level"])
+def load_team(cur: sqlite3.Cursor, pokemon: Pokemon, id_battle: int):
+    fields = ("pokemon", "battle", "level")
+    values = (pokemon["name"], id_battle, pokemon["level"])
     cur.execute(
-        f"INSERT INTO Level ({','.join(fields)}) VALUES ({','.join('?' for _ in fields)})", values)
+        f"INSERT INTO TeamP1 ({','.join(fields)}) VALUES ({','.join('?' for _ in fields)})", values)
 
 
 def insert_battle(cur: sqlite3.Cursor, battle: dict) -> int:
@@ -94,20 +94,18 @@ def insert_battle(cur: sqlite3.Cursor, battle: dict) -> int:
     pokemons: list[Pokemon] = battle["p1_team_details"]
     for pokemon in pokemons:
         load_pokemon(cur, pokemon)
-    cur.execute("INSERT INTO Team DEFAULT VALUES")
-    team_id = cur.lastrowid
-    fields = ("battle_id", "result", "p2_lead_pokemon", "p2_pokeon_level", "team")
+    fields = ("battle_id", "result", "p2_lead_pokemon", "p2_pokeon_level")
     cur.execute(
         f"INSERT INTO Battle ({','.join(fields)}) VALUES ({','.join('?' for _ in fields)})",
         (battle["battle_id"], player_won, battle["p2_lead_details"]
-         ["name"], battle["p2_lead_details"]["level"], team_id)
+         ["name"], battle["p2_lead_details"]["level"])
     )
     battle_id = cur.lastrowid
     for turn in battle["battle_timeline"]:
         insert_turn(cur, turn, battle_id)
 
     for pokemon in pokemons:
-        load_level(cur, pokemon, team_id)
+        load_team(cur, pokemon, battle_id)
     return battle_id
     
 

@@ -1,13 +1,10 @@
-Team(_id: serial_)
-
 Pokemon(_name: String _, base_hp: IntegerGEZ, base_atk: IntegerGEZ, base_def: IntegerGEZ, base_spa: IntegerGEZ, base_spd: IntegerGEZ, base_spe: IntegerGEZ)
 
-Level(_id: serial_, pokemon: String, team: Integer, level: IntegerGEZ)
+TeamP2(_id: serial_, pokemon: String, battle: Integer, level: IntegerGEZ)
     FK: pokemon references Pokemon(name)
-    FK: team references Team(id)
+    FK: battle references Battle(id)
 
-Battle(_id: serial_,id_battle: IntegerGEZ , *result: bool, player: IntegerGEZ, p2_lead_pokemon: String, p2_pokeon_level: IntegerGEZ)
-    FK: team references Team(id)
+Battle(_id: serial_,id_battle: IntegerGEZ , *result: bool, p2_lead_pokemon: String, p2_pokeon_level: IntegerGEZ)
     KF: p2_lead_pokemon references Pokemon(name)
 
 Dataset(_id: serial_, type: DatasetType)

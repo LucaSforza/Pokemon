@@ -37,8 +37,8 @@ def get_teams(cur: sqlite3.Cursor, game_id: int, _set: str) -> tuple[pd.DataFram
     
     cur.execute("""
     SELECT p.name,p.base_hp,p.base_atk, p.base_def, p.base_spa,p.base_spd, p.base_spe
-    FROM Level as l,Pokemon as p, Battle as b, Team as t
-    WHERE t.id = b.team and l.team = t.id and l.pokemon = p.name and b.id = ?
+    FROM TeamP1 as tp,Pokemon as p, Battle as b
+    WHERE tp.battle = b.id and tp.pokemon = p.name and b.id = ?
         """, (id_battle,))
     team1 = into_dataframe(cur)
     
@@ -70,13 +70,13 @@ def get_avg_pokemon(cur: sqlite3.Cursor) -> pd.DataFrame:
 def get_team_pokemon_avg_pd(team: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(team.drop(columns=["name"], errors='ignore').mean()).T
 
-def get_team_pokemon_avg(cur: sqlite3.Cursor, team_id: int) -> pd.DataFrame:
+def get_team_pokemon_avg(cur: sqlite3.Cursor, id_battle: int) -> pd.DataFrame:
 
     cur.execute("""
     SELECT avg(Pkm.base_hp) as base_hp, avg(Pkm.base_atk) as base_atk, avg(Pkm.base_def) as base_def, avg(Pkm.base_spa) as base_spa, avg(Pkm.base_spd) as base_spd, avg(Pkm.base_spe) as base_spe
-    FROM Pokemon AS Pkm, Level, Team
-    WHERE Team.id = ? AND Level.team = Team.id AND Pkm.name = Level.pokemon
-    """, (team_id,))
+    FROM Pokemon AS Pkm, TeamP1 as tp
+    WHERE tp.id = ? AND Pkm.name = tp.pokemon
+    """, (id_battle,))
 
     return into_dataframe(cur)
 

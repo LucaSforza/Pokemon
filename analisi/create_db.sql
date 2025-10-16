@@ -1,12 +1,3 @@
-
-
--- =====================================================
--- TABELLA TEAM
--- =====================================================
-CREATE TABLE Team (
-    id INTEGER PRIMARY KEY AUTOINCREMENT
-);
-
 -- =====================================================
 -- TABELLA POKEMON
 -- =====================================================
@@ -23,13 +14,13 @@ CREATE TABLE Pokemon (
 -- =====================================================
 -- TABELLA LEVEL
 -- =====================================================
-CREATE TABLE Level (
+CREATE TABLE TeamP1 (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     pokemon String NOT NULL,
-    team IntegerGEZ NOT NULL,
+    battle Integer NOT NULL,
     level IntegerGEZ NOT NULL,
     FOREIGN KEY (pokemon) REFERENCES Pokemon(name),
-    FOREIGN KEY (team) REFERENCES Team(id)
+    FOREIGN KEY (battle) REFERENCES Battle(id)
 );
 
 -- =====================================================
@@ -41,8 +32,6 @@ CREATE TABLE Battle (
     result BOOLEAN,
     p2_lead_pokemon String NOT NULL,
     p2_pokeon_level IntegerGEZ NOT NULL,
-    team IntegerGEZ NOT NULL,
-    FOREIGN KEY (team) REFERENCES Team(id),
     FOREIGN KEY (p2_lead_pokemon) REFERENCES Pokemon(name)
 );
 
