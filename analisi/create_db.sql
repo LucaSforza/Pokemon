@@ -36,7 +36,8 @@ CREATE TABLE Level (
 -- TABELLA BATTLE
 -- =====================================================
 CREATE TABLE Battle (
-    id IntegerGEZ PRIMARY KEY,
+    id integer PRIMARY KEY AUTOINCREMENT,
+    battle_id IntegerGEZ NOT NULL,
     result BOOLEAN,
     p2_lead_pokemon String NOT NULL,
     p2_pokeon_level IntegerGEZ NOT NULL,

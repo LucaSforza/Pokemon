@@ -17,7 +17,7 @@ def load_pokemon(cur: sqlite3.Cursor, pokemon: Pokemon):
         f"INSERT OR IGNORE INTO Pokemon ({','.join(fields)}) VALUES ({','.join('?' for _ in fields)})", values)
 
 
-def insert_state_move(cur: sqlite3.Cursor, state: State, move: Move | None):
+def insert_state_move(cur: sqlite3.Cursor, state: State, move: Move) -> int:
 
     move_name = None
     try:
@@ -41,13 +41,6 @@ def insert_state_move(cur: sqlite3.Cursor, state: State, move: Move | None):
 
     cur.execute(f"INSERT OR IGNORE INTO Status (name) VALUES (?)",
                 (state["status"],))
-    
-    for effect in state["effects"]:
-        cur.execute(
-            f"INSERT OR IGNORE INTO Effect (name) VALUES (?)", (effect,))
-    
-        cur.execute(
-            f"INSERT OR IGNORE INTO eff_pok (name) VALUES (?)", (move["type"],))
 
     fields = ("hp_pct", "status", "boost_atk", "boost_def", "boost_spa",
               "boost_spd", "boost_spe", "pokemon", "pok_move")
@@ -55,7 +48,16 @@ def insert_state_move(cur: sqlite3.Cursor, state: State, move: Move | None):
               ["spa"], state["boosts"]["spd"], state["boosts"]["spe"], state["name"], move_name)
     cur.execute(
         f"INSERT INTO PokemonState ({','.join(fields)}) VALUES ({','.join('?' for _ in fields)})", values)
-    return cur.lastrowid
+    state_id = cur.lastrowid
+    for effect in state["effects"]:
+        cur.execute(
+            f"INSERT OR IGNORE INTO Effect (name) VALUES (?)", (effect,))
+    
+        cur.execute(
+            f"INSERT INTO eff_pok (effect, pok_state) VALUES (?,?)", (effect,state_id))
+
+
+    return state_id
 
 
 def insert_turn(cur: sqlite3.Cursor, turn: Turn, battle_id : int):
@@ -75,7 +77,15 @@ def insert_turn(cur: sqlite3.Cursor, turn: Turn, battle_id : int):
         f"INSERT INTO Turn ({','.join(fields)}) VALUES ({','.join('?' for _ in fields)})", values)
 
 
-def insert_battle(cur: sqlite3.Cursor, battle: dict):
+
+def load_level(cur: sqlite3.Cursor, pokemon: Pokemon, team_id: int):
+    fields = ("pokemon", "team", "level")
+    values = (pokemon["name"], team_id, pokemon["level"])
+    cur.execute(
+        f"INSERT INTO Level ({','.join(fields)}) VALUES ({','.join('?' for _ in fields)})", values)
+
+
+def insert_battle(cur: sqlite3.Cursor, battle: dict) -> int:
     player_won: bool | None = None
     try:
         player_won = battle["player_won"]
@@ -86,30 +96,38 @@ def insert_battle(cur: sqlite3.Cursor, battle: dict):
         load_pokemon(cur, pokemon)
     cur.execute("INSERT INTO Team DEFAULT VALUES")
     team_id = cur.lastrowid
-    fields = ("id", "result", "p2_lead_pokemon", "p2_pokeon_level", "team")
+    fields = ("battle_id", "result", "p2_lead_pokemon", "p2_pokeon_level", "team")
     cur.execute(
         f"INSERT INTO Battle ({','.join(fields)}) VALUES ({','.join('?' for _ in fields)})",
         (battle["battle_id"], player_won, battle["p2_lead_details"]
          ["name"], battle["p2_lead_details"]["level"], team_id)
     )
+    battle_id = cur.lastrowid
     for turn in battle["battle_timeline"]:
-        insert_turn(cur, turn, battle["battle_id"])
+        insert_turn(cur, turn, battle_id)
 
+    for pokemon in pokemons:
+        load_level(cur, pokemon, team_id)
+    return battle_id
+    
 
-def load_train_dataset(db: sqlite3.Connection, path: str):
+def load_dataset(db: sqlite3.Connection, path: str, training: bool):
     cur = db.cursor()
 
     log_open_file(path)
-
+    type = "Train" if training else "Test"
+    cur.execute("INSERT INTO Dataset (type) VALUES (?)", (type,))
+    dataset_id = cur.lastrowid
     with open(path, "r") as f:
         print(path)
         for battle in f:
-            insert_battle(cur, json.loads(battle))
+            battle: Battle = json.loads(battle)
+            battle_id = insert_battle(cur, battle)
+            if battle.get("player_won") is not None == training:
+                print("[FATAL ERROR] the entry in not in the right dataset")
+                exit(1)
+            cur.execute("INSERT INTO bat_dat (dataset,battle) VALUES (?,?)", (dataset_id, battle_id))
     db.commit()
-
-
-def load_test_dataset(db: sqlite3.Connection, path: str):
-    pass
 
 
 def main():
@@ -119,8 +137,8 @@ def main():
     test_set = sys.argv[3]
     with sqlite3.connect(database_path) as conn:
         conn.row_factory = sqlite3.Row
-        load_train_dataset(conn, train_set)
-        load_test_dataset(conn, test_set)
+        load_dataset(conn, train_set, True)
+        load_dataset(conn, test_set, False)
 
 
 if __name__ == "__main__":

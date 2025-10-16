@@ -6,7 +6,7 @@ Level(_id: serial_, pokemon: String, team: Integer, level: IntegerGEZ)
     FK: pokemon references Pokemon(name)
     FK: team references Team(id)
 
-Battle(_id: IntegerGEZ _, *result: bool, player: IntegerGEZ, p2_lead_pokemon: String, p2_pokeon_level: IntegerGEZ)
+Battle(_id: serial_,id_battle: IntegerGEZ , *result: bool, player: IntegerGEZ, p2_lead_pokemon: String, p2_pokeon_level: IntegerGEZ)
     FK: team references Team(id)
     KF: p2_lead_pokemon references Pokemon(name)
 
