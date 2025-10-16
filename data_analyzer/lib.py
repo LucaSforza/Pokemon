@@ -51,5 +51,4 @@ def get_teams(cur: sqlite3.Cursor, game_id: int, _set: str) -> tuple[pd.DataFram
     team2 = into_dataframe(cur)
     
     return team1, team2
-    # TODO: add p2_lead_pokemon
     
