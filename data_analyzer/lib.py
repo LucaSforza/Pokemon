@@ -79,3 +79,15 @@ def get_team_pokemon_avg(cur: sqlite3.Cursor, team_id: int) -> pd.DataFrame:
     """, (team_id,))
 
     return into_dataframe(cur)
+
+def check_status_pokemon(cur: sqlite3.Cursor, team1: pd.DataFrame, team2: pd.DataFrame, id_battle: int) -> pd.DataFrame:
+    cur.execute(
+    """
+        SELECT ps.*, p.*
+        FROM Turn as t, PokemonState as ps, Pokemon as p
+        WHERE t.battle = ? and t.p1_state = ps.id and p.name = ps.pokemon and 
+        ORDER BY t.id asc
+    """, (id_battle,)
+    )
+    
+    cur.fetchall()[-1]
