@@ -28,8 +28,6 @@ def main():
             pokemons = get_pokemons(conn.cursor())
             print(pokemons)
     elif command == "get_teams":
-        print("[TODO]")
-        exit(1)
         try:
             database_path = sys.argv[2]
             game_id = int(sys.argv[3])
@@ -49,9 +47,9 @@ def main():
         team1,team2 = None, None
         with sqlite3.connect(database_path) as conn:
             conn.row_factory = sqlite3.Row
-            team1,team2 = get_teams(conn.cursor(), game_id, _set)
-        print_team(team1)
-        print_team(team2)
+            team1, team2 = get_teams(conn.cursor(), game_id, _set)
+            print(f"Team1:\n{team1}")
+            print(f"Team2:\n{team2}") 
     else:
         print(f"[ERROR] unknown command {command}")
         usage()
