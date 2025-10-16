@@ -56,6 +56,8 @@ def main():
         with sqlite3.connect(database_path) as conn:
             avg = get_team_pokemon_avg(conn.cursor(), team)
             print(avg)
+            all_avg = get_avg_pokemon(conn.cursor())
+            print(all_avg)
     else:
         print(f"[ERROR] unknown command {command}")
         usage()
