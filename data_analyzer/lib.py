@@ -54,9 +54,7 @@ def get_teams(cur: sqlite3.Cursor, game_id: int, _set: str) -> tuple[pd.DataFram
     GROUP BY p.name
     """, (id_battle,))
     team2 = into_dataframe(cur)
-    
-    print(team2)
-    
+        
     return team1, team2
 
 def get_teams_complete(cur: sqlite3.Cursor, game_id: int, _set: str) -> tuple[pd.DataFrame, pd.DataFrame]:
@@ -106,6 +104,20 @@ def check_status_pokemon(cur: sqlite3.Cursor, team: pd.DataFrame, primary: bool,
         if not frame["turn"].isna().all():
             results.append(frame)
     return pd.concat(results, ignore_index=True)
+
+def check_status_complete(cur: sqlite3.Cursor, team: pd.DataFrame, primary: bool,battle_id: int, _set: str) -> pd.DataFrame:
+    team_complete = get_teams_complete(cur, battle_id, _set)[0 if primary else 1]
+    team_complete = team_complete.drop(columns=["base_hp"])
+    
+    id_battle = find_id_battle(cur, battle_id, _set)
+    pokemon_status = check_status_pokemon(cur, team, primary,id_battle)
+    pokemon_status = pokemon_status.drop(columns=["turn", "id"])
+    pokemon_status = pokemon_status.rename(columns={"pokemon": "name"})
+    
+    complete_pokemon_status = pd.merge(team_complete, pokemon_status, on="name", how="left")
+    complete_pokemon_status = complete_pokemon_status.fillna({
+        "hp_pct": 1, "boost_atk": 0, "boost_def": 0, "boost_spa": 0, "boost_spd": 0, "boost_spe": 0, "status": "nostatus", "pok_move": "nomove"})
+    return complete_pokemon_status
 
 def find_id_battle(cur: sqlite3.Cursor, battle_id: int, _set: str) -> int:
     cur.execute("SELECT id FROM Dataset WHERE type = ?", (_set,))

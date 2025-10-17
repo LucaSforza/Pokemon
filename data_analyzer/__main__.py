@@ -85,8 +85,21 @@ def main():
             id_battle = find_id_battle(cur, id_battle, _set)
             print(f"id_battle = {id_battle}")
             print_battle(cur, id_battle)
-            
-            
+    
+    elif command == "complete_pokemon_state":
+        battle_id = int(sys.argv[3])
+        _set = sys.argv[4]
+        with sqlite3.connect(database_path) as conn:
+            conn.row_factory = sqlite3.Row
+            cur = conn.cursor()
+            team1, team2 = get_teams(cur, battle_id, _set)
+            status1 = check_status_complete(cur, team1,True, battle_id, _set)
+            status2 = check_status_complete(cur, team2,False, battle_id, _set)
+            print(f"Status1:\n{status1}")
+            #print(f"Status2:\n{status2}")
+
+    # TODO add type to get_pokemons
+
     else:
         print(f"[ERROR] unknown command {command}")
         usage()
