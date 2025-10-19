@@ -4,6 +4,10 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
+from sklearn.preprocessing import OneHotEncoder, StandardScaler, MultiLabelBinarizer
+from sklearn.decomposition import PCA
+from matplotlib import pyplot as plt
+
 Pokemon = dict[str, Any]
 PokemonDict = dict[str, Any]
 Team = list[Pokemon]
@@ -54,8 +58,39 @@ def get_teams(cur: sqlite3.Cursor, game_id: int, _set: str) -> tuple[pd.DataFram
     GROUP BY p.name
     """, (id_battle,))
     team2 = into_dataframe(cur)
-        
+    
+    team1, team2 = get_team_with_types(team1, team2, cur, game_id, _set)
+
     return team1, team2
+
+def get_team_with_types(team1: pd.DataFrame, team2: pd.DataFrame, cur: sqlite3.Cursor, game_id: int, _set: str) -> tuple[pd.DataFrame, pd.DataFrame]:
+    team1_pokemons = tuple(team1['name'].tolist())
+    team2_pokemons = tuple(team2['name'].tolist())
+    
+    cur.execute(f"""
+        SELECT p.name, GROUP_CONCAT(tp.type, ', ') AS types
+        FROM Pokemon AS p, type_pok AS tp
+        WHERE p.name IN ({','.join('?'*len(team1_pokemons))}) and p.name = tp.pokemon
+        GROUP BY p.name
+    """, team1_pokemons)
+    team1_types = into_dataframe(cur)
+
+    cur.execute(f"""
+        SELECT p.name, GROUP_CONCAT(tp.type, ', ') AS types
+        FROM Pokemon AS p, type_pok AS tp
+        WHERE p.name IN ({','.join('?'*len(team2_pokemons))}) and p.name = tp.pokemon
+        GROUP BY p.name
+    """, team2_pokemons)
+    team2_types = into_dataframe(cur)
+
+    team1_types['types'] = team1_types['types'].apply(lambda x: [t.strip() for t in x.split(',')])
+    team2_types['types'] = team2_types['types'].apply(lambda x: [t.strip() for t in x.split(',')])
+    
+    team1_with_types = pd.merge(team1, team1_types, on="name", how="left")
+    team2_with_types = pd.merge(team2, team2_types, on="name", how="left")
+
+    return team1_with_types, team2_with_types
+
 
 def get_teams_complete(cur: sqlite3.Cursor, game_id: int, _set: str) -> tuple[pd.DataFrame, pd.DataFrame]:
     team1, team2 = get_teams(cur,game_id, _set)
@@ -115,8 +150,12 @@ def check_status_complete(cur: sqlite3.Cursor, team: pd.DataFrame, primary: bool
     pokemon_status = pokemon_status.rename(columns={"pokemon": "name"})
     
     complete_pokemon_status = pd.merge(team_complete, pokemon_status, on="name", how="left")
+
     complete_pokemon_status = complete_pokemon_status.fillna({
         "hp_pct": 1, "boost_atk": 0, "boost_def": 0, "boost_spa": 0, "boost_spd": 0, "boost_spe": 0, "status": "nostatus", "pok_move": "nomove"})
+    complete_pokemon_status['types'] = complete_pokemon_status['types'].apply(
+        lambda x: x if isinstance(x, (list)) else ['notype'])
+
     return complete_pokemon_status
 
 def find_id_battle(cur: sqlite3.Cursor, battle_id: int, _set: str) -> int:
@@ -146,3 +185,14 @@ def print_battle(cur: sqlite3.Cursor, id_battle: int) -> None:
     )
     
     print(into_dataframe(cur))
+
+def get_all_types(cur: sqlite3.Cursor) -> list[str]:
+    cur.execute("SELECT name FROM PokemonType")
+    types = [row[0] for row in cur.fetchall()]
+    return types
+
+def get_all_status(cur: sqlite3.Cursor) -> list[str]:
+    cur.execute("SELECT name FROM Status")
+    status = [row[0] for row in cur.fetchall()]
+    return status
+

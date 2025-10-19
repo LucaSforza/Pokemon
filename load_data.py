@@ -15,6 +15,13 @@ def load_pokemon(cur: sqlite3.Cursor, pokemon: Pokemon):
     values = tuple(pokemon[f] for f in fields)
     cur.execute(
         f"INSERT OR IGNORE INTO Pokemon ({','.join(fields)}) VALUES ({','.join('?' for _ in fields)})", values)
+    types = pokemon["types"]
+    for t in types:
+        if t != "notype":
+            cur.execute(
+                f"INSERT OR IGNORE INTO PokemonType(name) VALUES (?)", (t,))
+            cur.execute(
+                f"INSERT OR IGNORE INTO type_pok (pokemon, type) VALUES (?,?)", (pokemon["name"], t))
 
 
 def insert_state_move(cur: sqlite3.Cursor, state: State, move: Move) -> int:

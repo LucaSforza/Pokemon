@@ -141,3 +141,22 @@ CREATE TABLE eff_pok (
     FOREIGN KEY (effect) REFERENCES Effect(name),
     FOREIGN KEY (pok_state) REFERENCES PokemonState(id)
 );
+
+-- =====================================================
+-- TABELLA Type
+-- =====================================================
+CREATE TABLE PokemonType (
+    name String PRIMARY KEY
+);
+
+-- =====================================================
+-- TABELLA type_pok (associazione pokemon tipo)
+-- =====================================================
+CREATE TABLE type_pok (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    pokemon String NOT NULL,
+    type String NOT NULL,
+    FOREIGN KEY (pokemon) REFERENCES Pokemon(name),
+    FOREIGN KEY (type) REFERENCES PokemonType(name)
+    UNIQUE(pokemon, type)
+);

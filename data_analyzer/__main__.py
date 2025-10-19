@@ -96,9 +96,104 @@ def main():
             status1 = check_status_complete(cur, team1,True, battle_id, _set)
             status2 = check_status_complete(cur, team2,False, battle_id, _set)
             print(f"Status1:\n{status1}")
-            #print(f"Status2:\n{status2}")
+            print(f"Status2:\n{status2}")
 
-    # TODO add type to get_pokemons
+    elif command == "pca":
+        _set = sys.argv[3]
+        all_status = pd.DataFrame()
+
+        with sqlite3.connect(database_path) as conn:
+            conn.row_factory = sqlite3.Row
+            cur = conn.cursor()
+            
+            all_types = get_all_types(cur) + ["notype"]
+            mlb = MultiLabelBinarizer(classes=all_types)
+            mlb.fit([all_types])
+
+            all_pokemon_status = get_all_status(cur)
+            ohe = OneHotEncoder(categories=[all_pokemon_status], sparse_output=False, handle_unknown='ignore')
+  
+            for battle_id in range(10000):
+                team1, team2 = get_teams(cur, battle_id, _set)
+                status1 = check_status_complete(cur, team1,True, battle_id, _set)
+                status2 = check_status_complete(cur, team2,False, battle_id, _set)              
+
+                status1 = status1.add_prefix('p1_')
+                status2 = status2.add_prefix('p2_')
+
+                status1 = status1.drop(columns=["p1_name", "p1_pok_move"])
+                status2 = status2.drop(columns=["p2_name", "p2_pok_move"])
+
+                p1_type_encoded = pd.DataFrame(
+                    mlb.transform(status1['p1_types']),
+                    columns=[f'p1_type_{t}' for t in mlb.classes_],
+                    index=status1.index)
+
+                p2_type_encoded = pd.DataFrame(                    
+                    mlb.transform(status2['p2_types']),
+                    columns=[f'p2_type_{t}' for t in mlb.classes_],
+                    index=status2.index)
+                
+                status1 = pd.concat([status1.drop(columns=['p1_types']), p1_type_encoded], axis=1)
+                status2 = pd.concat([status2.drop(columns=['p2_types']), p2_type_encoded], axis=1)
+
+                p1_status_encoded = pd.DataFrame(
+                    ohe.fit_transform(status1[['p1_status']]),
+                    columns=[f'p1_status_{s}' for s in all_pokemon_status],
+                    index=status1.index
+                )
+
+                p2_status_encoded = pd.DataFrame(
+                    ohe.fit_transform(status2[['p2_status']]),
+                    columns=[f'p2_status_{s}' for s in all_pokemon_status],
+                    index=status2.index
+                )
+
+                status1 = pd.concat([status1.drop(columns=['p1_status']), p1_status_encoded], axis=1)
+                status2 = pd.concat([status2.drop(columns=['p2_status']), p2_status_encoded], axis=1)
+
+                status = pd.concat([status1, status2], axis=1)
+                status_aggregated = pd.DataFrame(status.sum()).T
+                
+                all_status = pd.concat([all_status, status_aggregated], ignore_index=True)
+                    
+            scaler = StandardScaler()
+            all_status_scaled = scaler.fit_transform(all_status)
+
+            pca = PCA(n_components=0.95)  # conserva il 95% della varianza
+            pca_result = pca.fit_transform(all_status_scaled)
+
+            explained = pd.Series(pca.explained_variance_ratio_, index=[f'PC{i+1}' for i in range(len(pca.explained_variance_ratio_))])
+
+            components = pd.DataFrame(pca.components_, columns=all_status.columns)
+
+            # Prendi la prima componente principale (PC1)
+            pc1_importance = components.loc[0].abs().sort_values(ascending=False)
+
+            # Plot
+            plt.figure(figsize=(10,6))
+            pc1_importance.plot(kind='bar')
+            plt.title('Top colonne per la prima componente principale (PC1)')
+            plt.ylabel('Contributo assoluto')
+            plt.show()
+        
+            # Pondera i loadings per la varianza spiegata
+            weighted_importance = components.T * explained.values
+            total_importance = weighted_importance.abs().sum(axis=1).sort_values(ascending=False)
+        
+            # Plot
+            plt.figure(figsize=(10,6))
+            total_importance.plot(kind='bar')
+            plt.title('Contributo totale delle colonne alla PCA')
+            plt.ylabel('Contributo totale ponderato')
+            plt.show()
+
+            #Stampo dizionario con le componenti principali in ordine di importanza
+            print("Importanza delle caratteristiche (colonne) nella PCA:")
+            for feature, importance in total_importance.items():
+                print(f"{feature}: {importance}")
+
+
 
     else:
         print(f"[ERROR] unknown command {command}")
