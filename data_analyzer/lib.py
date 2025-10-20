@@ -309,11 +309,33 @@ def get_battle_result(cur: sqlite3.Cursor, battle_id: int, _set: str) -> int:
     result = cur.fetchone()[0]
     return result
 
-def save_datapoints(conn: sqlite3.Connection, X: pd.DataFrame, Y: pd.DataFrame) -> None:
-    X.to_sql('Input', conn, if_exists='replace', index=False)
-    Y.to_sql('Output', conn, if_exists='replace', index=False)
+def save_datapoints(conn: sqlite3.Connection, X: pd.DataFrame, Y: pd.DataFrame, test: bool = False) -> None:
+    X_table = 'TestInput' if test else 'Input'
+    Y_table = 'TestOutput' if test else 'Output'
+    X.to_sql(X_table, conn, if_exists='replace', index=False)
+    Y.to_sql(Y_table, conn, if_exists='replace', index=False)
 
-def load_datapoints(conn: sqlite3.Connection) -> tuple[pd.DataFrame, pd.DataFrame]:
+def load_datapoints(conn: sqlite3.Connection, test: bool = False) -> tuple[pd.DataFrame, pd.DataFrame]:
+    X_table = 'TestInput' if test else 'Input'
+    Y_table = 'TestOutput' if test else 'Output'
     X = pd.read_sql('SELECT * FROM Input', conn)
     Y = pd.read_sql('SELECT * FROM Output', conn)
     return X, Y
+
+def create_submission(model: Any, X_test: pd.DataFrame, test_df: pd.DataFrame) -> None:
+    #TODO caricare i dati di test e fare le predizioni
+    # Make predictions on the test data
+    print("Generating predictions on the test set...")
+    test_predictions = model.predict(X_test)
+
+    # Create the submission DataFrame
+    submission_df = pd.DataFrame({
+        'battle_id': test_df['battle_id'],
+        'player_won': test_predictions
+    })
+
+    # Save the DataFrame to a .csv file
+    submission_df.to_csv('submission.csv', index=False)
+
+    print("\n'submission.csv' file created successfully!")
+    display(submission_df.head())
