@@ -217,16 +217,13 @@ def get_all_status(cur: sqlite3.Cursor) -> list[str]:
 def get_datapoints(cur: sqlite3.Cursor, _set: str) -> tuple[pd.DataFrame, pd.DataFrame]:
     cur.execute("SELECT count(*) FROM Dataset as d WHERE d.type = ?", (_set,))
     n_points = int(cur.fetchall()[0][0])  # fix: fetchall() restituisce una lista di tuple
-    datapoints_X = []
-    datapoints_Y = []
-
+    
+    X = pd.DataFrame()
+    Y = pd.DataFrame()
+    
     for id in tqdm(range(n_points)):
-        point, y = get_teams_features(cur, id, _set)
-        datapoints_X.append(point)
-        datapoints_Y.append(y)
+        X, Y = get_teams_features(cur, id, _set,X, Y)
 
-    X = pd.concat(datapoints_X, ignore_index=True)
-    Y = pd.concat(datapoints_Y, ignore_index=True)
     return X, Y
        
     
