@@ -106,9 +106,11 @@ def main():
             conn.row_factory = sqlite3.Row
             cur = conn.cursor()
   
-            for battle_id in range(3): # TODO: piu generico
-                get_teams_features(cur, battle_id, _set, all_status)
-                    
+            for battle_id in range(2): # TODO: piu generico
+                s1, s2, all_s = get_teams_features(cur, battle_id, _set, all_status)
+
+            exit(0)
+            
             scaler = StandardScaler()
             all_status_scaled = scaler.fit_transform(all_status)
 
