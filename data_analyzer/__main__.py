@@ -196,7 +196,19 @@ def main():
 
 
     if command == "train":
-        pass
+        # da capire 'solver' cosa fa
+        regressor = LogisticRegressionCV()
+        
+        with sqlite3.connect(database_path) as conn:
+            cur = conn.cursor()
+            X,Y = get_datapoints(cur, "Train")
+        X_train, X_val, Y_train, Y_val = train_test_split(X,Y, test_size=0.2, random_state=42)
+        
+        n_epochs = int(sys.argv[3])
+        
+        for _epoch in range(n_epochs):
+            regressor.fit(X_train,Y_train)
+            Y_pred = regressor.predict(X_train)
     
     else:
         print(f"[ERROR] unknown command {command}")
