@@ -179,7 +179,13 @@ def main():
         with sqlite3.connect(database_path) as conn:
             cur = conn.cursor()
             X,Y = get_datapoints(cur, "Train")
-            save_datapoints(conn, X, Y)
+            save_datapoints(conn, X, Y, False)
+
+    elif command == "save_test_data":
+        with sqlite3.connect(database_path) as conn:
+            cur = conn.cursor()
+            X,Y = get_datapoints(cur, "Test")
+            save_datapoints(conn, X, Y, True)
 
     else:
         print(f"[ERROR] unknown command {command}")
