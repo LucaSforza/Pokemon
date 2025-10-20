@@ -322,6 +322,42 @@ def load_datapoints(conn: sqlite3.Connection, test: bool = False) -> tuple[pd.Da
     Y = pd.read_sql('SELECT * FROM Output', conn)
     return X, Y
 
+def train(X: pd.DataFrame,Y: pd.DataFrame, seed: int =42):
+    
+    
+    regressor = LogisticRegressionCV(cv=5, max_iter=2000, random_state=seed)
+    
+    X_train, X_val, Y_train, Y_val = train_test_split(X,Y, test_size=0.2, random_state=42)
+    
+    minimum_val_error = float("inf")  # start with infinity
+    best_epoch = None
+    best_model: LogisticRegressionCV = None
+    best_accuracy = 0
+    
+    val_errors: list[float] = []
+    train_set_errors: list[float] = []
+    #for epoch in tqdm(range(n_epochs), desc="Epochs"):
+    regressor.fit(X_train,Y_train)
+    Y_pred = regressor.predict(X_val)
+    Y_train_pred = regressor.predict(X_train)
+    val_train_error = mean_squared_error(Y_train, Y_train_pred)
+    val_error: float = mean_squared_error(Y_val, Y_pred)
+    val_errors.append(val_error)
+    train_set_errors.append(val_train_error)
+    accuracy: float = accuracy_score(Y_val, Y_pred)
+    # If this epoch gives the best validation error so far, save the model
+    if val_error < minimum_val_error:
+        minimum_val_error = val_error
+        #if best_accuracy < accuracy:
+        #    print("[FATAL ERROR] the accuracy must be below best_accuracy")
+        #    exit(1)
+        best_accuracy = accuracy
+        best_epoch = 0
+        best_model = sklearn.clone(regressor)  # clone creates an independent copy of the model
+    print(f"Best epoch: {best_epoch}")
+    print(f"Best model: {best_model.get_params(deep=True)}")
+    print(f"Best accuracy: {best_accuracy}")
+    return best_model, best_accuracy
 def create_submission(model: Any, X_test: pd.DataFrame, test_df: pd.DataFrame) -> None:
     #TODO caricare i dati di test e fare le predizioni
     # Make predictions on the test data
