@@ -4,28 +4,56 @@
 \usepackage{amsmath}
 
 \begin{document}
-    \section{Begin}
+    \section{Modellazione matematica del problema}
 
     Sia $n$ il numero di partite. $y_i$ è l'outcome di quella partita.
+    $x_i$ è la descrizione dalla partita $i$.
 
-    $\text{Pokemon}_i^j$ sono le statistiche del Pokemon $j$ nella partita $i$ che conosco.
+    Sia $p$ il numero di feature.
 
-    $\text{PokemonState}_i^j$ è lo stato del pokemon $j$ nella partita $i$ alla fine dei 30 turni.
+    Vogliamo indovinare una funzione $f: \mathbb{R}^p \rightarrow \{y_0,y_1\}$
 
-    $\text{PokemonAdversary}_i^j$ sono le statistiche del Pokemon dell'avversario $j$ nella partita $i$ che conosco.
+    $y_0$ è il valore nel caso la partita è stata persa, $y_1$ altrimenti.
 
-    $\text{PokemonStateAdversary}_i^j$ è lo stato del Pokemon dell'avversario $j$ nella partita $i$ che conosco.
+    Nel nostro dataset abbiamo che $y_i = f(x_i) + \varepsilon$. dove $\varepsilon \sim \mathcal{N}(0,\sigma^2)$.
 
-    Sia $x_i$ le feature della partita $i$.
-
-\begin{equation}
-    x_i = <\text{Pokemon}_i^1, \dots, \text{Pokemon}_i^6, \text{PokemonState}_i^1, \dots, \text{PokemonState}_i^6,\text{PokemonAdversary}_i^1, \dots, \text{PokemonAdversary}_i^6, \text{PokemonAdversaryState}_i^1, \dots \text{PokemonAdversaryState}_i^6,>
-\end{equation}
-
-\begin{equation}
-    \mathcal{D} = \{ (<x_i, y_i) \mid i \in [1,n]\}
-\end{equation}
+    \begin{equation}
+        \mathcal{D} = \{ (x_i, y_i) \mid i \in [1,n] \land x_i \in \mathbb{R}^p \land y_i \in \{y_0, y_1\}\}
+    \end{equation}
 
 
+    Com'è composto $x_i$?
+
+    \begin{equation}
+        x_i = \text{StatoPoks}_i \circ \text{StatoPoksAdv}_i \circ \text{tipiPoks}_i
+    \end{equation}
+
+
+    $\text{StatoPoks}_i$ e $\text{StatoPoksAdv}_i$ hanno diverse feature.
+
+    Queste feature sono la media dei vari pokemon.
+
+    Sia $\text{StatoPok}_i^j$ lo stato di un singolo pokemon della partita $i$ del pokemon $j \in \{1, \dots, 6\}$.
+
+    \begin{equation}
+        \text{StatoPoks}_i^f = \frac{1}{6} \sum_{j \in \{1, \dots, 6\}} StatoPok_i^{j,f} \mid f \in \mathcal{F}
+    \end{equation}
+
+
+    Dove $\mathcal{F}$ è l'insieme delle feature di un pokemon.
+
+    Speculare è per l'avversario.
+
+    \begin{equation}
+        \text{StatoPoksAdv}_i^f = \frac{1}{6} \sum_{j \in \{1, \dots, 6\}} StatoPokAdv_i^{j,f} \mid f \in \mathcal{F}
+    \end{equation}
+
+    L'unica differenza è che potremmo non poter osservare tutti i pokemon dell'avversario. Se non conosciamo il $j$-esimo pokemon allora
+    possiamo inserire il pokemon medio. Ovvero la media di tutte le feature di tutti i pokemon conosciuti che possono capitare.
+
+    $\text{tipiPoks}_i$ è il hot one encode dei tipi dei pokemon di una partita.
+
+    Per ogni pokemon possiamo fare il hot one encode dei tipi di quel pokemon. Poi vengono sommati a tutta la squadra e sottratti
+    al hot one encode dell'avversario. % TODO: formalizza
 
 \end{document}
