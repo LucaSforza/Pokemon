@@ -1,5 +1,7 @@
 import sys
 
+from sklearn import clone
+
 from lib import *
 
 PROGRAM_NAME = sys.argv[0]
@@ -176,7 +178,7 @@ def main():
             pc1_importance.plot(kind='bar')
             plt.title('Top colonne per la prima componente principale (PC1)')
             plt.ylabel('Contributo assoluto')
-            plt.show()
+            plt.savefig("plt/Contr_Absol_Train.png")
         
             # Pondera i loadings per la varianza spiegata
             weighted_importance = components.T * explained.values
@@ -187,7 +189,7 @@ def main():
             total_importance.plot(kind='bar')
             plt.title('Contributo totale delle colonne alla PCA')
             plt.ylabel('Contributo totale ponderato')
-            plt.show()
+            plt.savefig("plt/Contr_Ponderate_Train.png")
 
             #Stampo dizionario con le componenti principali in ordine di importanza
             print("Importanza delle caratteristiche (colonne) nella PCA:")
@@ -195,7 +197,59 @@ def main():
                 print(f"{feature}: {importance}")
 
 
-
+    elif command == "train":
+        # da capire 'solver' cosa fa
+        regressor = LogisticRegressionCV()
+        
+        with sqlite3.connect(database_path) as conn:
+            cur = conn.cursor()
+            X,Y = get_datapoints(cur, "Train")
+        X_train, X_val, Y_train, Y_val = train_test_split(X,Y, test_size=0.2, random_state=42)
+        
+        n_epochs = int(sys.argv[3])
+        
+        minimum_val_error = float("inf")  # start with infinity
+        best_epoch = None
+        best_model: LogisticRegressionCV = None
+        best_accuracy = None
+        
+        val_errors: list[float] = []
+        train_set_errors: list[float] = []
+        for epoch in range(n_epochs):
+            regressor.fit(X_train,Y_train)
+            Y_pred = regressor.predict(X_val)
+            Y_train_pred = regressor.predict(X_train)
+            val_train_error = mean_squared_error(Y_train, Y_train_pred)
+            val_error: float = mean_squared_error(Y_val, Y_pred)
+            val_errors.append(val_error)
+            train_set_errors.append(val_error)
+            train_set_errors.append(val_train_error)
+            accuracy: float = accuracy_score(Y_val, Y_pred)
+            # If this epoch gives the best validation error so far, save the model
+            if val_error < minimum_val_error:
+                minimum_val_error = val_error
+                if best_accuracy < accuracy:
+                    print("[FATAL ERROR] the accuracy must be below best_accuracy")
+                    exit(1)
+                best_accuracy = accuracy
+                best_epoch = epoch
+                best_model = clone(regressor)  # clone creates an independent copy of the model
+        print(f"Best epoch: {best_epoch}")
+        print(f"Best model: {best_model.C_}")
+        print(f"Best accuracy: {best_accuracy}")
+        
+        plt.figure(figsize=(8, 5))
+        plt.plot(range(n_epochs), train_set_errors, label="Train Error", marker='o')
+        plt.plot(range(n_epochs), val_errors, label="Validation Error", marker='x')
+        plt.xlabel("Epoch")
+        plt.ylabel("Mean Squared Error")
+        plt.title("Train vs Validation Error per Epoch")
+        plt.legend()
+        plt.grid(True)
+        plt.tight_layout()
+        plt.savefig("errors.png")
+        
+    
     else:
         print(f"[ERROR] unknown command {command}")
         usage()

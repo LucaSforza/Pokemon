@@ -4,8 +4,14 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
+
+import sklearn
 from sklearn.preprocessing import OneHotEncoder, StandardScaler, MultiLabelBinarizer
 from sklearn.decomposition import PCA
+from sklearn.linear_model import LogisticRegressionCV
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_squared_error
+from sklearn.metrics import accuracy_score
 from matplotlib import pyplot as plt
 
 Pokemon = dict[str, Any]
@@ -196,3 +202,7 @@ def get_all_status(cur: sqlite3.Cursor) -> list[str]:
     status = [row[0] for row in cur.fetchall()]
     return status
 
+# TODO: implement
+# Fai una query alla tabella input e dividili in due datafram X e Y
+def get_datapoints(cur: sqlite3.Cursor, _set: str) -> tuple[pd.DataFrame, pd.DataFrame]:
+    pass
