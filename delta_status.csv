@@ -1,0 +1,2 @@
+base_atk,base_def,base_spa,base_spd,base_spe,boost_atk,boost_def,boost_spa,boost_spd,boost_spe,hp_final,type_psychic,type_water,type_grass,type_normal,type_ice,type_ghost,type_poison,type_ground,type_rock,type_electric,type_flying,type_dragon,type_fire,type_nan,status_nostatus,status_frz,status_par,status_slp,status_fnt,status_tox,status_psn,status_brn
+136.10000000000002,103.10000000000002,30.25,30.25,74.5,0.0,0.0,-4.0,-4.0,0.0,76.17752056314362,1.0,0.0,1.0,-1.0,-1.0,0.0,0.0,1.0,1.0,0.0,0.0,0.0,0.0,0.0,-1.0,0.0,2.0,-1.0,0.0,0.0,0.0,0.0
