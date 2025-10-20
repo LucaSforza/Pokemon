@@ -309,13 +309,13 @@ def get_battle_result(cur: sqlite3.Cursor, battle_id: int, _set: str) -> int:
     result = cur.fetchone()[0]
     return result
 
-def save_datapoints(conn: sqlite3.Connection, X: pd.DataFrame, Y: pd.DataFrame, test: bool) -> None:
+def save_datapoints(conn: sqlite3.Connection, X: pd.DataFrame, Y: pd.DataFrame, test: bool = False) -> None:
     X_table = 'TestInput' if test else 'Input'
     Y_table = 'TestOutput' if test else 'Output'
     X.to_sql(X_table, conn, if_exists='replace', index=False)
     Y.to_sql(Y_table, conn, if_exists='replace', index=False)
 
-def load_datapoints(conn: sqlite3.Connection, test: bool) -> tuple[pd.DataFrame, pd.DataFrame]:
+def load_datapoints(conn: sqlite3.Connection, test: bool = False) -> tuple[pd.DataFrame, pd.DataFrame]:
     X_table = 'TestInput' if test else 'Input'
     Y_table = 'TestOutput' if test else 'Output'
     X = pd.read_sql('SELECT * FROM Input', conn)
