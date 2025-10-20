@@ -167,7 +167,7 @@ def main():
         
         val_errors: list[float] = []
         train_set_errors: list[float] = []
-        for epoch in range(n_epochs):
+        for epoch in tqdm(range(n_epochs), desc="Epochs"):
             regressor.fit(X_train,Y_train)
             Y_pred = regressor.predict(X_val)
             Y_train_pred = regressor.predict(X_train)

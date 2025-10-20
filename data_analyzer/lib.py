@@ -215,13 +215,13 @@ def get_all_status(cur: sqlite3.Cursor) -> list[str]:
 # TODO: implement
 # Fai una query alla tabella input e dividili in due datafram X e Y
 def get_datapoints(cur: sqlite3.Cursor, _set: str) -> tuple[pd.DataFrame, pd.DataFrame]:
-    cur.execute("SELECT count(*) FROM Dataset as d WHERE d.type = ?", (_set,))
-    n_points = int(cur.fetchall()[0][0])  # fix: fetchall() restituisce una lista di tuple
-    
+    cur.execute("SELECT count(*) FROM Dataset as d, bat_dat bd WHERE d.type = ? and bd.dataset = d.id", (_set,))
+    n_points = into_dict(cur)[0]["count(*)"]
+    print(n_points)
     X = pd.DataFrame()
     Y = pd.DataFrame()
     
-    for id in tqdm(range(n_points)):
+    for id in tqdm(range(n_points), desc="datapoints"):
         X, Y = get_teams_features(cur, id, _set,X, Y)
 
     return X, Y
