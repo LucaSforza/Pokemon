@@ -315,7 +315,9 @@ def save_datapoints(conn: sqlite3.Connection, X: pd.DataFrame, Y: pd.DataFrame, 
     X.to_sql(X_table, conn, if_exists='replace', index=False)
     Y.to_sql(Y_table, conn, if_exists='replace', index=False)
 
-def load_datapoints(conn: sqlite3.Connection) -> tuple[pd.DataFrame, pd.DataFrame]:
+def load_datapoints(conn: sqlite3.Connection, test: bool) -> tuple[pd.DataFrame, pd.DataFrame]:
+    X_table = 'TestInput' if test else 'Input'
+    Y_table = 'TestOutput' if test else 'Output'
     X = pd.read_sql('SELECT * FROM Input', conn)
     Y = pd.read_sql('SELECT * FROM Output', conn)
     return X, Y
