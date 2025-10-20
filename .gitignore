@@ -5,6 +5,7 @@
 *.gz
 
 input/
+.vscode/
 
 .$*
 

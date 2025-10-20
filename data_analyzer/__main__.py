@@ -107,10 +107,59 @@ def main():
         with sqlite3.connect(database_path) as conn:
             conn.row_factory = sqlite3.Row
             cur = conn.cursor()
-  
-            for battle_id in tqdm(range(1000), desc="Processing"): # TODO: piu generico
-                all_status = get_teams_features(cur, battle_id, _set, all_status)
             
+            all_types = get_all_types(cur) + ["notype"]
+            mlb = MultiLabelBinarizer(classes=all_types)
+            mlb.fit([all_types])
+
+            all_pokemon_status = get_all_status(cur)
+            ohe = OneHotEncoder(categories=[all_pokemon_status], sparse_output=False, handle_unknown='ignore')
+  
+            for battle_id in range(10000): # TODO: piu generico
+                team1, team2 = get_teams(cur, battle_id, _set)
+                status1 = check_status_complete(cur, team1,True, battle_id, _set)
+                status2 = check_status_complete(cur, team2,False, battle_id, _set)              
+
+                status1 = status1.add_prefix('p1_')
+                status2 = status2.add_prefix('p2_')
+
+                status1 = status1.drop(columns=["p1_name", "p1_pok_move"])
+                status2 = status2.drop(columns=["p2_name", "p2_pok_move"])
+
+                p1_type_encoded = pd.DataFrame(
+                    mlb.transform(status1['p1_types']),
+                    columns=[f'p1_type_{t}' for t in mlb.classes_],
+                    index=status1.index)
+
+                p2_type_encoded = pd.DataFrame(                    
+                    mlb.transform(status2['p2_types']),
+                    columns=[f'p2_type_{t}' for t in mlb.classes_],
+                    index=status2.index)
+                # attacco gli altri attributi, si riferiscono per ogni tabella e per ogni pokemon
+                status1 = pd.concat([status1.drop(columns=['p1_types']), p1_type_encoded], axis=1)
+                status2 = pd.concat([status2.drop(columns=['p2_types']), p2_type_encoded], axis=1)
+
+                # TODO: collassarli facendo la combinazione lineare delle due
+                p1_status_encoded = pd.DataFrame(
+                    ohe.fit_transform(status1[['p1_status']]),
+                    columns=[f'p1_status_{s}' for s in all_pokemon_status],
+                    index=status1.index
+                )
+
+                p2_status_encoded = pd.DataFrame(
+                    ohe.fit_transform(status2[['p2_status']]),
+                    columns=[f'p2_status_{s}' for s in all_pokemon_status],
+                    index=status2.index
+                )
+                # TODO: collassarli facendo la combinazione lineare delle due
+                status1 = pd.concat([status1.drop(columns=['p1_status']), p1_status_encoded], axis=1)
+                status2 = pd.concat([status2.drop(columns=['p2_status']), p2_status_encoded], axis=1)
+
+                status = pd.concat([status1, status2], axis=1)
+                status_aggregated = pd.DataFrame(status.sum()).T
+                
+                all_status = pd.concat([all_status, status_aggregated], ignore_index=True)
+                    
             scaler = StandardScaler()
             all_status_scaled = scaler.fit_transform(all_status)
 
