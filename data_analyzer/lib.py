@@ -147,8 +147,6 @@ def check_status_pokemon(cur: sqlite3.Cursor, team: pd.DataFrame, primary: bool,
 def check_status_complete(cur: sqlite3.Cursor, team: pd.DataFrame, primary: bool,battle_id: int, _set: str) -> pd.DataFrame:
     team_complete = get_teams_complete(cur, battle_id, _set)[0 if primary else 1] 
 
-    # secondo me dovremmo moltiplicare dalla vita rimasta agli hp
-    # TODO: moltiplicare base_hp con la percentuale rimasta
     id_battle = find_id_battle(cur, battle_id, _set)
     pokemon_status = check_status_pokemon(cur, team, primary,id_battle)
     pokemon_status = pokemon_status.drop(columns=["turn", "id"])
@@ -158,15 +156,20 @@ def check_status_complete(cur: sqlite3.Cursor, team: pd.DataFrame, primary: bool
 
     complete_pokemon_status = complete_pokemon_status.fillna({
         "hp_pct": 1, "boost_atk": 0, "boost_def": 0, "boost_spa": 0, "boost_spd": 0, "boost_spe": 0, "status": "nostatus", "pok_move": "nomove"})
-    complete_pokemon_status['types'] = complete_pokemon_status['types'].apply(
-        lambda x: x if isinstance(x, (list)) else ['notype'])
 
     complete_pokemon_status["hp_final"] = complete_pokemon_status["base_hp"] * complete_pokemon_status["hp_pct"]
     complete_pokemon_status = complete_pokemon_status.drop(columns=["hp_pct", "base_hp", "pok_move"])
         
     columns_to_reset = ["base_atk", "base_def", "base_spa", "base_spd", "base_spe", "boost_atk", "boost_def", "boost_spa", "boost_spd", "boost_spe"]
     complete_pokemon_status.loc[complete_pokemon_status['hp_final'] == 0, columns_to_reset] = 0
+    complete_pokemon_status.loc[complete_pokemon_status['hp_final'] == 0, ["types"]] = "fnt"
+    print(complete_pokemon_status)
 
+    complete_pokemon_status['types'] = complete_pokemon_status['types'].apply(
+        lambda x: x if isinstance(x, (list)) else ['notype'])
+
+    print(complete_pokemon_status)
+    exit(0)
     return complete_pokemon_status
 
 def find_id_battle(cur: sqlite3.Cursor, battle_id: int, _set: str) -> int:
@@ -212,8 +215,13 @@ def get_all_status(cur: sqlite3.Cursor) -> list[str]:
 def get_datapoints(cur: sqlite3.Cursor, _set: str) -> tuple[pd.DataFrame, pd.DataFrame]:
    pass 
     
+# Aggiungiamo notype per i pokemon che non conosciamo e type = fnt per i pokemon che sono morti
+# Cancelliamo la colonna type_fnt in modo che i morti hanno tutti gli altri valori a 0
+# Average invece di sommare le features dei pokemon con get_team_pokemon_avg_pd
+# Aggregare i due team in un unico dataframe sottraendo le features
 def get_teams_features(cur: sqlite3.Cursor, battle_id: int, _set: str, all_status: pd.DataFrame) -> pd.DataFrame:
-    all_types = get_all_types(cur)
+    all_types = get_all_types(cur) + ["notype", "fnt"]
+
     mlb = MultiLabelBinarizer(classes=all_types)
     mlb.fit([all_types])
 
@@ -258,7 +266,7 @@ def get_teams_features(cur: sqlite3.Cursor, battle_id: int, _set: str, all_statu
     )
 
     print(p2_status_encoded)
-    
+
     # TODO: collassarli facendo la combinazione lineare delle due
     status1 = pd.concat([status1.drop(columns=['p1_status']), p1_status_encoded], axis=1)
     status2 = pd.concat([status2.drop(columns=['p2_status']), p2_status_encoded], axis=1)
