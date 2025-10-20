@@ -42,6 +42,8 @@
 
     Dove $\mathcal{F}$ è l'insieme delle feature di un pokemon.
 
+    Nota bene: se la vita di un pokemon è 0, allora tutte le altre feature devono essere 0.
+
     Speculare è per l'avversario.
 
     \begin{equation}
@@ -54,6 +56,6 @@
     $\text{tipiPoks}_i$ è il hot one encode dei tipi dei pokemon di una partita.
 
     Per ogni pokemon possiamo fare il hot one encode dei tipi di quel pokemon. Poi vengono sommati a tutta la squadra e sottratti
-    al hot one encode dell'avversario. % TODO: formalizza
+    al hot one encode dell'avversario. Se un pokemon è morto allora non viene considerato.% TODO: formalizza
 
 \end{document}
