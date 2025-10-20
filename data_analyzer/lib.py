@@ -16,6 +16,8 @@ from matplotlib import pyplot as plt
 
 from joblib import parallel_backend
 from tqdm import tqdm
+import warnings
+warnings.simplefilter("ignore", category=UserWarning)
 
 Pokemon = dict[str, Any]
 PokemonDict = dict[str, Any]
@@ -288,11 +290,14 @@ def get_teams_features(
     status_aggregated2 = pd.DataFrame(status2.sum()).T
 
     delta_status = status_aggregated1 - status_aggregated2
+    id_battle = find_id_battle(cur, battle_id, _set)
+    delta_status["id_battle"] = id_battle
     
     all_status = pd.concat([all_status, delta_status], ignore_index=True)
 
     result = get_battle_result(cur, battle_id, _set)
     result = pd.DataFrame([result], columns=["result"])
+    result["id_battle"] = id_battle
 
     all_results = pd.concat([all_results, result], ignore_index=True)
 
@@ -303,3 +308,12 @@ def get_battle_result(cur: sqlite3.Cursor, battle_id: int, _set: str) -> int:
     cur.execute("SELECT result FROM Battle WHERE id = ?", (id_battle,))
     result = cur.fetchone()[0]
     return result
+
+def save_datapoints(conn: sqlite3.Connection, X: pd.DataFrame, Y: pd.DataFrame) -> None:
+    X.to_sql('Input', conn, if_exists='replace', index=False)
+    Y.to_sql('Output', conn, if_exists='replace', index=False)
+
+def load_datapoints(conn: sqlite3.Connection) -> tuple[pd.DataFrame, pd.DataFrame]:
+    X = pd.read_sql('SELECT * FROM Input', conn)
+    Y = pd.read_sql('SELECT * FROM Output', conn)
+    return X, Y
