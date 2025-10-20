@@ -197,7 +197,7 @@ def main():
                 print(f"{feature}: {importance}")
 
 
-    if command == "train":
+    elif command == "train":
         # da capire 'solver' cosa fa
         regressor = LogisticRegressionCV()
         
