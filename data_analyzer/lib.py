@@ -142,8 +142,8 @@ def check_status_pokemon(cur: sqlite3.Cursor, team: pd.DataFrame, primary: bool,
 
 def check_status_complete(cur: sqlite3.Cursor, team: pd.DataFrame, primary: bool,battle_id: int, _set: str) -> pd.DataFrame:
     team_complete = get_teams_complete(cur, battle_id, _set)[0 if primary else 1]
-    team_complete = team_complete.drop(columns=["base_hp"])
-    
+    team_complete = team_complete.drop(columns=["base_hp"]) # secondo me dovremmo moltiplicare dalla vita rimasta agli hp
+    # TODO: moltiplicare base_hp con la percentuale rimasta
     id_battle = find_id_battle(cur, battle_id, _set)
     pokemon_status = check_status_pokemon(cur, team, primary,id_battle)
     pokemon_status = pokemon_status.drop(columns=["turn", "id"])

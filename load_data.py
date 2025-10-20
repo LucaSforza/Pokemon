@@ -96,6 +96,10 @@ def insert_battle(cur: sqlite3.Cursor, battle: dict) -> int:
     player_won: bool | None = None
     try:
         player_won = battle["player_won"]
+        # SAFETY: so di essere nel trainset se no avrebbe dato errore nella riga precedente
+        # quella partita è persa
+        if battle["battle_id"] == 4877:
+            player_won = False
     except KeyError:
         pass
     pokemons: list[Pokemon] = battle["p1_team_details"]
