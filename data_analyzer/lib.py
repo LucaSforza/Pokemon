@@ -217,11 +217,15 @@ def get_all_status(cur: sqlite3.Cursor) -> list[str]:
 def get_datapoints(cur: sqlite3.Cursor, _set: str) -> tuple[pd.DataFrame, pd.DataFrame]:
    pass 
     
-# Aggiungiamo notype per i pokemon che non conosciamo e type = fnt per i pokemon che sono morti OK
-# Cancelliamo la colonna type_fnt in modo che i morti hanno tutti gli altri valori a 0
-# Average invece di sommare le features dei pokemon con get_team_pokemon_avg_pd
-# Aggregare i due team in un unico dataframe sottraendo le features
-def get_teams_features(cur: sqlite3.Cursor, battle_id: int, _set: str, all_status: pd.DataFrame) -> pd.DataFrame:
+# Ritornare un dataframe e una serie con 0 o 1
+def get_teams_features(
+    cur: sqlite3.Cursor, 
+    battle_id: int, 
+    _set: str, 
+    all_status: pd.DataFrame, 
+    all_results: pd.DataFrame
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    
     all_types = get_all_types(cur) + ["nan", "fnt"]
 
     mlb = MultiLabelBinarizer(classes=all_types)
@@ -255,7 +259,6 @@ def get_teams_features(cur: sqlite3.Cursor, battle_id: int, _set: str, all_statu
     status1 = status1.drop(columns=[f'type_fnt'])
     status2 = status2.drop(columns=[f'type_fnt'])
     
-    # TODO: collassarli facendo la combinazione lineare delle due
     p1_status_encoded = pd.DataFrame(
         ohe.fit_transform(status1[['status']]),
         columns=[f'status_{s}' for s in all_pokemon_status],
@@ -268,7 +271,6 @@ def get_teams_features(cur: sqlite3.Cursor, battle_id: int, _set: str, all_statu
         index=status2.index
     )
 
-    # TODO: collassarli facendo la combinazione lineare delle due
     status1 = pd.concat([status1.drop(columns=['status']), p1_status_encoded], axis=1)
     status2 = pd.concat([status2.drop(columns=['status']), p2_status_encoded], axis=1)
 
@@ -279,4 +281,15 @@ def get_teams_features(cur: sqlite3.Cursor, battle_id: int, _set: str, all_statu
     
     all_status = pd.concat([all_status, delta_status], ignore_index=True)
 
-    return all_status
+    result = get_battle_result(cur, battle_id, _set)
+    result = pd.DataFrame([result], columns=["result"])
+
+    all_results = pd.concat([all_results, result], ignore_index=True)
+
+    return all_status, all_results
+
+def get_battle_result(cur: sqlite3.Cursor, battle_id: int, _set: str) -> int:
+    id_battle = find_id_battle(cur, battle_id, _set)
+    cur.execute("SELECT result FROM Battle WHERE id = ?", (id_battle,))
+    result = cur.fetchone()[0]
+    return result
