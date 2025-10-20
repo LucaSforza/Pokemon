@@ -106,10 +106,8 @@ def main():
             conn.row_factory = sqlite3.Row
             cur = conn.cursor()
   
-            for battle_id in range(2): # TODO: piu generico
-                s1, s2, all_s = get_teams_features(cur, battle_id, _set, all_status)
-
-            exit(0)
+            for battle_id in tqdm(range(1000), desc="Processing"): # TODO: piu generico
+                all_status = get_teams_features(cur, battle_id, _set, all_status)
             
             scaler = StandardScaler()
             all_status_scaled = scaler.fit_transform(all_status)
@@ -169,4 +167,5 @@ def main():
         usage()
         exit(1)
     
-main()
+with parallel_backend('threading', n_jobs=8):
+    main()

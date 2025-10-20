@@ -12,6 +12,9 @@ from sklearn.linear_model import LogisticRegressionCV
 from sklearn.model_selection import train_test_split
 from matplotlib import pyplot as plt
 
+from joblib import parallel_backend
+from tqdm import tqdm
+
 Pokemon = dict[str, Any]
 PokemonDict = dict[str, Any]
 Team = list[Pokemon]
@@ -226,53 +229,52 @@ def get_teams_features(cur: sqlite3.Cursor, battle_id: int, _set: str, all_statu
     ohe = OneHotEncoder(categories=[all_pokemon_status], sparse_output=False, handle_unknown='ignore')
     
     team1, team2 = get_teams(cur, battle_id, _set)
+
     status1 = check_status_complete(cur, team1,True, battle_id, _set)
     status2 = check_status_complete(cur, team2,False, battle_id, _set)              
 
-    status1 = status1.add_prefix('p1_')
-    status2 = status2.add_prefix('p2_')
-
-    status1 = status1.drop(columns=["p1_name"])
-    status2 = status2.drop(columns=["p2_name"])
+    status1 = status1.drop(columns=["name"])
+    status2 = status2.drop(columns=["name"])
 
     p1_type_encoded = pd.DataFrame(
-        mlb.transform(status1['p1_types']),
-        columns=[f'p1_type_{t}' for t in mlb.classes_],
+        mlb.transform(status1['types']),
+        columns=[f'type_{t}' for t in mlb.classes_],
         index=status1.index)
 
     p2_type_encoded = pd.DataFrame(                    
-        mlb.transform(status2['p2_types']),
-        columns=[f'p2_type_{t}' for t in mlb.classes_],
+        mlb.transform(status2['types']),
+        columns=[f'type_{t}' for t in mlb.classes_],
         index=status2.index)
     
     # attacco gli altri attributi, si riferiscono per ogni tabella e per ogni pokemon
-    status1 = pd.concat([status1.drop(columns=['p1_types']), p1_type_encoded], axis=1)
-    status2 = pd.concat([status2.drop(columns=['p2_types']), p2_type_encoded], axis=1)
+    status1 = pd.concat([status1.drop(columns=['types']), p1_type_encoded], axis=1)
+    status2 = pd.concat([status2.drop(columns=['types']), p2_type_encoded], axis=1)
     
-    status1 = status1.drop(columns=[f'p1_type_fnt'])
-    status2 = status2.drop(columns=[f'p2_type_fnt'])
+    status1 = status1.drop(columns=[f'type_fnt'])
+    status2 = status2.drop(columns=[f'type_fnt'])
     
     # TODO: collassarli facendo la combinazione lineare delle due
     p1_status_encoded = pd.DataFrame(
-        ohe.fit_transform(status1[['p1_status']]),
-        columns=[f'p1_status_{s}' for s in all_pokemon_status],
+        ohe.fit_transform(status1[['status']]),
+        columns=[f'status_{s}' for s in all_pokemon_status],
         index=status1.index
     )
 
     p2_status_encoded = pd.DataFrame(
-        ohe.fit_transform(status2[['p2_status']]),
-        columns=[f'p2_status_{s}' for s in all_pokemon_status],
+        ohe.fit_transform(status2[['status']]),
+        columns=[f'status_{s}' for s in all_pokemon_status],
         index=status2.index
     )
 
     # TODO: collassarli facendo la combinazione lineare delle due
-    status1 = pd.concat([status1.drop(columns=['p1_status']), p1_status_encoded], axis=1)
-    status2 = pd.concat([status2.drop(columns=['p2_status']), p2_status_encoded], axis=1)
+    status1 = pd.concat([status1.drop(columns=['status']), p1_status_encoded], axis=1)
+    status2 = pd.concat([status2.drop(columns=['status']), p2_status_encoded], axis=1)
 
-    status = pd.concat([status1, status2], axis=1)
-    status_aggregated = pd.DataFrame(status.sum()).T
+    status_aggregated1 = pd.DataFrame(status1.sum()).T
+    status_aggregated2 = pd.DataFrame(status2.sum()).T
+
+    delta_status = status_aggregated1 - status_aggregated2
     
-    all_status = pd.concat([all_status, status_aggregated], ignore_index=True)
+    all_status = pd.concat([all_status, delta_status], ignore_index=True)
 
-    return status1, status2, all_status
-    #return all_status
+    return all_status
