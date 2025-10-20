@@ -10,6 +10,8 @@ from sklearn.preprocessing import OneHotEncoder, StandardScaler, MultiLabelBinar
 from sklearn.decomposition import PCA
 from sklearn.linear_model import LogisticRegressionCV
 from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_squared_error
+from sklearn.metrics import accuracy_score
 from matplotlib import pyplot as plt
 
 Pokemon = dict[str, Any]
