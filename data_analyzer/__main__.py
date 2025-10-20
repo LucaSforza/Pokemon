@@ -176,7 +176,7 @@ def main():
             pc1_importance.plot(kind='bar')
             plt.title('Top colonne per la prima componente principale (PC1)')
             plt.ylabel('Contributo assoluto')
-            plt.show()
+            plt.savefig("plt/Contr_Absol_Train.png")
         
             # Pondera i loadings per la varianza spiegata
             weighted_importance = components.T * explained.values
@@ -187,7 +187,7 @@ def main():
             total_importance.plot(kind='bar')
             plt.title('Contributo totale delle colonne alla PCA')
             plt.ylabel('Contributo totale ponderato')
-            plt.show()
+            plt.savefig("plt/Contr_Ponderate_Train.png")
 
             #Stampo dizionario con le componenti principali in ordine di importanza
             print("Importanza delle caratteristiche (colonne) nella PCA:")
@@ -195,7 +195,9 @@ def main():
                 print(f"{feature}: {importance}")
 
 
-
+    if command == "train":
+        pass
+    
     else:
         print(f"[ERROR] unknown command {command}")
         usage()
