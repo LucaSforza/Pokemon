@@ -54,7 +54,6 @@ class RidgeTrainer(ModelTrainer):
 class KNeighborsClassifierTrainer(ModelTrainer):
     
     def fit(self,X: np.ndarray, Y:np.ndarray, cv=5, n_jobs=8, seed=42, patience=100, epochs=1000) -> tuple[Model,float]:
-        model = KNeighborsClassifier()
         
         kf = KFold(n_splits=cv, shuffle=True, random_state=seed)
         
@@ -118,54 +117,64 @@ class XGBClassifierTrainer(ModelTrainer):
     
 class RandomForestClassifierTrainer(ModelTrainer):
     
-    def fit(self,X: np.ndarray, Y:np.ndarray, cv=5, n_jobs=8, seed=42) -> tuple[Model,float]:
-        rf = RandomForestClassifier(random_state=seed)
-
-        # Griglia di iperparametri
-        param_grid = {
-            'n_estimators': [100, 200, 300],
-            'max_depth': [None, 10, 20, 30],
-            'min_samples_split': [2, 5, 10],
-            'min_samples_leaf': [1, 2, 4],
-            'max_features': ['sqrt', 'log2']
-        }
-
-        # Grid search
-        grid = GridSearchCV(
-            estimator=rf,
-            param_grid=param_grid,
-            scoring='accuracy',
-            cv=cv,
-            n_jobs=n_jobs
-        )
+    def fit(self,X: np.ndarray, Y:np.ndarray, cv=5, n_jobs=2, seed=42, patience=100, epochs=1000) -> tuple[Model,float]:
+        kf = KFold(n_splits=cv, shuffle=True, random_state=seed)
         
-        grid.fit(X, Y)
-        mean_acc = grid.best_score_
-        return grid.best_estimator_, mean_acc
+        best_model = None
+        best_accuracy = None
+        no_improve = 0
+        for size in tqdm(range(20,epochs), desc="random fortest"):
+            tot_accuracy = 0.0
+            i = 0
+            model = None
+            for train_idx, test_idx in kf.split(X):
+                model = RandomForestClassifier(max_depth=size, n_jobs=n_jobs)
+                i += 1
+                X_train, X_val = X[train_idx], X[test_idx]
+                Y_train, Y_val = Y[train_idx], Y[test_idx]
+                model.fit(X_train, Y_train)
+                Y_pred = model.predict(X_val)
+                accuracy = accuracy_score(Y_val, Y_pred)
+                tot_accuracy += accuracy
+            mean_acc = tot_accuracy/i
+            if best_accuracy is None or best_accuracy < mean_acc:
+                best_accuracy = mean_acc
+                best_model = model
+                no_improve = 0
+            else:
+                no_improve += 1
+                if no_improve >= patience:
+                    break
+        return best_model, best_accuracy
 
 class DecisionTreeClassifierTrainer(ModelTrainer):
     
-    def fit(self,X: np.ndarray, Y:np.ndarray, cv=5, n_jobs=8, seed=42) -> tuple[Model,float]:
-        rf = RandomForestClassifier(random_state=seed)
-
-        # Griglia di iperparametri
-        param_grid = {
-            "max_depth": [None, 5, 10, 15, 20, 25, 30, 35, 40],          # profondità massima
-            "min_samples_split": [2, 5, 10, 20],         # campioni minimi per split
-            "min_samples_leaf": [1, 2, 4, 8],            # campioni minimi per foglia
-            "max_features": [None, "sqrt", "log2"],      # numero di feature considerate per split
-            "criterion": ["gini", "entropy"]             # funzione di impurità
-        }
-
-        # Grid search
-        grid = GridSearchCV(
-            estimator=rf,
-            param_grid=param_grid,
-            scoring='accuracy',
-            cv=cv,
-            n_jobs=n_jobs
-        )
+    def fit(self,X: np.ndarray, Y:np.ndarray, cv=5, n_jobs=4, seed=42, patience=20, epochs=1000) -> tuple[Model,float]:
+        kf = KFold(n_splits=cv, shuffle=True, random_state=seed)
         
-        grid.fit(X, Y)
-        mean_acc = grid.best_score_
-        return grid.best_estimator_, mean_acc
+        best_model = None
+        best_accuracy = None
+        no_improve = 0
+        for size in tqdm(range(1,epochs), desc="decision tree"):
+            tot_accuracy = 0.0
+            i = 0
+            model = None
+            for train_idx, test_idx in kf.split(X):
+                model = DecisionTreeClassifier(max_depth=size)
+                i += 1
+                X_train, X_val = X[train_idx], X[test_idx]
+                Y_train, Y_val = Y[train_idx], Y[test_idx]
+                model.fit(X_train, Y_train)
+                Y_pred = model.predict(X_val)
+                accuracy = accuracy_score(Y_val, Y_pred)
+                tot_accuracy += accuracy
+            mean_acc = tot_accuracy/i
+            if best_accuracy is None or best_accuracy < mean_acc:
+                best_accuracy = mean_acc
+                best_model = model
+                no_improve = 0
+            else:
+                no_improve += 1
+                if no_improve >= patience:
+                    break
+        return best_model, best_accuracy

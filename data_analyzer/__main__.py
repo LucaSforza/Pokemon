@@ -266,10 +266,10 @@ def main():
             X,Y = prepare_data(conn, 0.999)
 
         models = {
-            "KNN": KNeighborsClassifierTrainer(),
-            "LogisticRegressionCV": LogisticRegressionTrainer(),
-            # "DecisionTreeClassifier": DecisionTreeClassifierTrainer(),
-            # "RandomForest": RandomForestClassifierTrainer(),
+            #"KNN": KNeighborsClassifierTrainer(),
+            #"LogisticRegressionCV": LogisticRegressionTrainer(),
+            #"DecisionTreeClassifier": DecisionTreeClassifierTrainer(),
+            "RandomForest": RandomForestClassifierTrainer(),
             # "XGB": XGBClassifierTrainer(),
             # "RidgeCV": RidgeTrainer(),
         }
