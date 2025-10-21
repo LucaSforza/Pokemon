@@ -2,7 +2,7 @@ from lib import *
 
 from sklearn.model_selection import GridSearchCV
 
-from sklearn.model_selection import KFold
+from sklearn.model_selection import KFold, StratifiedKFold
 
 from abc import ABC,abstractmethod
 
@@ -100,6 +100,60 @@ class XGBClassifierTrainer(ModelTrainer):
             verbose=1
         )
 
+        grid.fit(X, Y)
+        mean_acc = grid.best_score_
+        return grid.best_estimator_, mean_acc
+    
+class RandomForestClassifierTrainer(ModelTrainer):
+    
+    def fit(X: np.ndarray, Y:np.ndarray, cv=5, n_jobs=8, seed=42) -> tuple[Model,float]:
+        rf = RandomForestClassifier(random_state=seed)
+
+        # Griglia di iperparametri
+        param_grid = {
+            'n_estimators': [100, 200, 300],
+            'max_depth': [None, 10, 20, 30],
+            'min_samples_split': [2, 5, 10],
+            'min_samples_leaf': [1, 2, 4],
+            'max_features': ['sqrt', 'log2']
+        }
+
+        # Grid search
+        grid = GridSearchCV(
+            estimator=rf,
+            param_grid=param_grid,
+            scoring='accuracy',
+            cv=cv,
+            n_jobs=n_jobs
+        )
+        
+        grid.fit(X, Y)
+        mean_acc = grid.best_score_
+        return grid.best_estimator_, mean_acc
+
+class DecisionTreeClassifier(ModelTrainer):
+    
+    def fit(X: np.ndarray, Y:np.ndarray, cv=5, n_jobs=8, seed=42) -> tuple[Model,float]:
+        rf = RandomForestClassifier(random_state=seed)
+
+        # Griglia di iperparametri
+        param_grid = {
+            "max_depth": [None, 5, 10, 15, 20, 25, 30, 35, 40],          # profondità massima
+            "min_samples_split": [2, 5, 10, 20],         # campioni minimi per split
+            "min_samples_leaf": [1, 2, 4, 8],            # campioni minimi per foglia
+            "max_features": [None, "sqrt", "log2"],      # numero di feature considerate per split
+            "criterion": ["gini", "entropy"]             # funzione di impurità
+        }
+
+        # Grid search
+        grid = GridSearchCV(
+            estimator=rf,
+            param_grid=param_grid,
+            scoring='accuracy',
+            cv=cv,
+            n_jobs=n_jobs
+        )
+        
         grid.fit(X, Y)
         mean_acc = grid.best_score_
         return grid.best_estimator_, mean_acc
