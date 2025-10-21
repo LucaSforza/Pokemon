@@ -9,17 +9,17 @@ from abc import ABC,abstractmethod
 class Model(ABC):
     
     @abstractmethod
-    def predict(X: np.ndarray) -> np.ndarray:
+    def predict(self,X: np.ndarray) -> np.ndarray:
         ...
     
     @abstractmethod
-    def get_model_type() -> type:
+    def get_model_type(self,) -> type:
         ...
 
 class ModelTrainer(ABC):
     
     @abstractmethod
-    def fit(X: np.ndarray, Y:np.ndarray, cv=5, n_jobs=8, seed=42) -> tuple[Model,float]:
+    def fit(self, X: np.ndarray, Y:np.ndarray, cv=5, n_jobs=8, seed=42) -> tuple[Model,float]:
         ...
 
 
@@ -28,7 +28,7 @@ def model_selections(models: dict[str, ModelTrainer], X: np.ndarray, Y: np.ndarr
     rng = np.random.default_rng(seed)
     np.random.seed(seed)
     best_models = {}
-    for name, model in models.items():
+    for name, model in tqdm(models.items()):
         new_seed = rng.integers(0, 2**32 - 1)
         m, accuracy = model.fit(X,Y,n_jobs=n_jobs, seed=new_seed)
         best_models[name] = {"model": m, "seed": new_seed, "accuracy": accuracy}
@@ -37,7 +37,7 @@ def model_selections(models: dict[str, ModelTrainer], X: np.ndarray, Y: np.ndarr
 
 class LogisticRegressionTrainer(ModelTrainer):
     
-    def fit(X: np.ndarray, Y:np.ndarray, cv=5, n_jobs=8, seed=42) -> tuple[Model,float]:
+    def fit(self,X: np.ndarray, Y:np.ndarray, cv=5, n_jobs=8, seed=42) -> tuple[Model,float]:
         model = LogisticRegressionCV(cv=cv,random_state=seed, n_jobs=n_jobs)
         model.fit(X,Y)
         mean_acc = np.mean([v.mean() for v in model.scores_.values()])
@@ -45,18 +45,18 @@ class LogisticRegressionTrainer(ModelTrainer):
     
 class RidgeTrainer(ModelTrainer):
     
-    def fit(X: np.ndarray, Y:np.ndarray, cv=5, n_jobs=8, seed=42) -> tuple[Model,float]:
-        model = RidgeCV(cv=cv,random_state=seed, n_jobs=n_jobs)
+    def fit(self,X: np.ndarray, Y:np.ndarray, cv=5, n_jobs=8, seed=42) -> tuple[Model,float]:
+        model = RidgeCV(cv=cv)
         model.fit(X,Y)
         mean_acc = np.mean([v.mean() for v in model.scores_.values()])
         return model, mean_acc
     
 class KNeighborsClassifierTrainer(ModelTrainer):
     
-    def fit(X: np.ndarray, Y:np.ndarray, cv=5, n_jobs=8, seed=42) -> tuple[Model,float]:
+    def fit(self,X: np.ndarray, Y:np.ndarray, cv=5, n_jobs=8, seed=42) -> tuple[Model,float]:
         model = KNeighborsClassifier()
         param_grid = {
-            "n_neighbors": [3, 5, 7, 9, 11],
+            "n_neighbors": [i for i in range(1,120,5)],
             "weights": ["uniform", "distance"],
             "p": [1, 2]
         }
@@ -68,14 +68,13 @@ class KNeighborsClassifierTrainer(ModelTrainer):
             cv=cv,                 # 5-fold cross-validation
             n_jobs=n_jobs         # usa tutti i core disponibili
         )
-
         grid.fit(X, Y)
         mean_acc = grid.best_score_
         return grid.best_estimator_, mean_acc
 
 class XGBClassifierTrainer(ModelTrainer):
     
-    def fit(X: np.ndarray, Y: np.ndarray, cv=5, n_jobs=8, seed=42) -> tuple[Model, float]:
+    def fit(self,X: np.ndarray, Y: np.ndarray, cv=5, n_jobs=8, seed=42) -> tuple[Model, float]:
         model = XGBClassifier(
             objective="binary:logistic",
             random_state=seed,
@@ -106,7 +105,7 @@ class XGBClassifierTrainer(ModelTrainer):
     
 class RandomForestClassifierTrainer(ModelTrainer):
     
-    def fit(X: np.ndarray, Y:np.ndarray, cv=5, n_jobs=8, seed=42) -> tuple[Model,float]:
+    def fit(self,X: np.ndarray, Y:np.ndarray, cv=5, n_jobs=8, seed=42) -> tuple[Model,float]:
         rf = RandomForestClassifier(random_state=seed)
 
         # Griglia di iperparametri
@@ -131,9 +130,9 @@ class RandomForestClassifierTrainer(ModelTrainer):
         mean_acc = grid.best_score_
         return grid.best_estimator_, mean_acc
 
-class DecisionTreeClassifier(ModelTrainer):
+class DecisionTreeClassifierTrainer(ModelTrainer):
     
-    def fit(X: np.ndarray, Y:np.ndarray, cv=5, n_jobs=8, seed=42) -> tuple[Model,float]:
+    def fit(self,X: np.ndarray, Y:np.ndarray, cv=5, n_jobs=8, seed=42) -> tuple[Model,float]:
         rf = RandomForestClassifier(random_state=seed)
 
         # Griglia di iperparametri

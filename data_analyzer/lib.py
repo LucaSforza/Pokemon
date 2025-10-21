@@ -377,7 +377,7 @@ def create_submission(cur: sqlite3.Cursor, model: Any, X_test: pd.DataFrame) -> 
     print("\n'submission.csv' file created successfully!")
     #display(submission_df.head())
 
-def scale_input(X: pd.DataFrame) -> pd.DataFrame:
+def scale_input(X: pd.DataFrame) -> np.ndarray:
     X = X.drop(columns=["id_battle"], errors='ignore')
     #scaler = StandardScaler()
     scaler = MinMaxScaler()
@@ -393,3 +393,29 @@ def find_test_id(cur: sqlite3.Cursor) -> int:
     })
 
     return df
+
+
+def prepare_data(conn: sqlite3.Connection, variance: float):
+    X,Y = load_datapoints(conn)
+    
+    X = X.sort_values(by="id_battle")
+    Y = Y.sort_values(by="id_battle")
+    
+    total_importance = None
+    
+    with open("pca.json", "r") as f:
+        total_importance = json.load(f)
+    
+    # calcolo varianza cumulativa
+    sorted_items = sorted(total_importance.items(), key=lambda x: x[1], reverse=True)
+    values = np.array([v for _, v in sorted_items])
+    cum = np.cumsum(values) / np.sum(values)
+
+    idx = np.argmax(cum >= variance)
+    selected = [f for f, _ in sorted_items[: idx + 1]]
+    print(selected)
+    X = X.filter(items=selected)
+
+    Y = Y.drop(columns=["id_battle"]).to_numpy()
+    X = scale_input(X) 
+    return X,Y

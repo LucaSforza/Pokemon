@@ -1,6 +1,7 @@
 import sys
 
 from lib import *
+from model_selection import *
 
 PROGRAM_NAME = sys.argv[0]
 
@@ -259,6 +260,24 @@ def main():
 
             create_submission(cur, model, X_test)
 
+    elif command == "model_selection":
+        X,Y = None,None
+        with sqlite3.connect(database_path) as conn:
+            X,Y = prepare_data(conn, 0.999)
+
+        models = {
+            "KNN": KNeighborsClassifierTrainer(),
+            "LogisticRegressionCV": LogisticRegressionTrainer(),
+            # "DecisionTreeClassifier": DecisionTreeClassifierTrainer(),
+            # "RandomForest": RandomForestClassifierTrainer(),
+            # "XGB": XGBClassifierTrainer(),
+            # "RidgeCV": RidgeTrainer(),
+        }
+        
+        result = model_selections(models, X,Y, seed=42, n_jobs=4)
+        print(result)
+        
+    
     else:
         print(f"[ERROR] unknown command {command}")
         usage()
