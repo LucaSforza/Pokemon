@@ -11,6 +11,13 @@ import sklearn
 from sklearn.preprocessing import OneHotEncoder, StandardScaler, MultiLabelBinarizer, MinMaxScaler
 from sklearn.decomposition import PCA
 from sklearn.linear_model import LogisticRegressionCV
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.svm import LinearSVC
+from sklearn.ensemble import RandomForestClassifier
+from xgboost import XGBClassifier
+from sklearn.linear_model import RidgeCV
+from sklearn.neural_network import MLPClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error
 from sklearn.metrics import accuracy_score
