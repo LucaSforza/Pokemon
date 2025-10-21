@@ -19,7 +19,7 @@ class Model(ABC):
 class ModelTrainer(ABC):
     
     @abstractmethod
-    def fit(self, X: np.ndarray, Y:np.ndarray, cv=5, n_jobs=8, seed=42) -> tuple[Model,float]:
+    def fit(self, X: np.ndarray, Y:np.ndarray, cv=5, n_jobs=8, seed=42, patience=10, epochs=100) -> tuple[Model,float]:
         ...
 
 
@@ -28,7 +28,7 @@ def model_selections(models: dict[str, ModelTrainer], X: np.ndarray, Y: np.ndarr
     rng = np.random.default_rng(seed)
     np.random.seed(seed)
     best_models = {}
-    for name, model in tqdm(models.items()):
+    for name, model in models.items():
         new_seed = rng.integers(0, 2**32 - 1)
         m, accuracy = model.fit(X,Y,n_jobs=n_jobs, seed=new_seed)
         best_models[name] = {"model": m, "seed": new_seed, "accuracy": accuracy}
@@ -53,24 +53,37 @@ class RidgeTrainer(ModelTrainer):
     
 class KNeighborsClassifierTrainer(ModelTrainer):
     
-    def fit(self,X: np.ndarray, Y:np.ndarray, cv=5, n_jobs=8, seed=42) -> tuple[Model,float]:
+    def fit(self,X: np.ndarray, Y:np.ndarray, cv=5, n_jobs=8, seed=42, patience=100, epochs=1000) -> tuple[Model,float]:
         model = KNeighborsClassifier()
-        param_grid = {
-            "n_neighbors": [i for i in range(1,120,5)],
-            "weights": ["uniform", "distance"],
-            "p": [1, 2]
-        }
-
-        grid = GridSearchCV(
-            estimator=model,
-            param_grid=param_grid,
-            scoring="accuracy",
-            cv=cv,                 # 5-fold cross-validation
-            n_jobs=n_jobs         # usa tutti i core disponibili
-        )
-        grid.fit(X, Y)
-        mean_acc = grid.best_score_
-        return grid.best_estimator_, mean_acc
+        
+        kf = KFold(n_splits=cv, shuffle=True, random_state=seed)
+        
+        best_model = None
+        best_accuracy = None
+        no_improve = 0
+        for size in tqdm(range(1,epochs), desc="k-neighbors"):
+            tot_accuracy = 0.0
+            i = 0
+            model = None
+            for train_idx, test_idx in kf.split(X):
+                model = KNeighborsClassifier(n_neighbors=size)
+                i += 1
+                X_train, X_val = X[train_idx], X[test_idx]
+                Y_train, Y_val = Y[train_idx], Y[test_idx]
+                model.fit(X_train, Y_train)
+                Y_pred = model.predict(X_val)
+                accuracy = accuracy_score(Y_val, Y_pred)
+                tot_accuracy += accuracy
+            mean_acc = tot_accuracy/i
+            if best_accuracy is None or best_accuracy < mean_acc:
+                best_accuracy = mean_acc
+                best_model = model
+                no_improve = 0
+            else:
+                no_improve += 1
+                if no_improve >= patience:
+                    break
+        return best_model, best_accuracy
 
 class XGBClassifierTrainer(ModelTrainer):
     
