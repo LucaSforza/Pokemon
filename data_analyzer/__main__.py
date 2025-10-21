@@ -159,9 +159,6 @@ def main():
         X = X.sort_values(by="id_battle")
         Y = Y.sort_values(by="id_battle")
         
-        Y = Y.drop(columns=["id_battle"])
-        X = X.drop(columns=["id_battle"])
-        
         total_importance = None
         
         with open("pca.json", "r") as f:
@@ -176,9 +173,12 @@ def main():
         selected = [f for f, _ in sorted_items[: idx + 1]]
         print(selected)
         X = X.filter(items=selected)
+
+        Y = Y.drop(columns=["id_battle"])
+        X = scale_input(X)     
         
         np.random.seed(42)
-        numbers = np.random.randint(0, 2**32, size=30)
+        numbers = np.random.randint(0, 2**32, size=30, dtype=np.uint64)
         total_accuracy = 0.0
         total_bias = 0.0
         total_r2 = 0.0
@@ -209,6 +209,55 @@ def main():
             cur = conn.cursor()
             X,Y = get_datapoints(cur, "Test")
             save_datapoints(conn, X, Y, True)
+
+    elif command == "create_submission":
+        variance = None
+        try:
+            variance = float(sys.argv[3])
+        except IndexError:
+            variance = 0.995
+        
+        with sqlite3.connect(database_path) as conn:
+            cur = conn.cursor()
+            X,Y = load_datapoints(conn)
+        
+        
+        X = X.sort_values(by="id_battle")
+        Y = Y.sort_values(by="id_battle")
+        
+        total_importance = None
+        
+        with open("pca.json", "r") as f:
+            total_importance = json.load(f)
+        
+        # calcolo varianza cumulativa
+        sorted_items = sorted(total_importance.items(), key=lambda x: x[1], reverse=True)
+        values = np.array([v for _, v in sorted_items])
+        cum = np.cumsum(values) / np.sum(values)
+
+        idx = np.argmax(cum >= variance)
+        selected = [f for f, _ in sorted_items[: idx + 1]]
+        print(selected)
+        X = X.filter(items=selected)
+
+        Y = Y.drop(columns=["id_battle"])
+        X = scale_input(X)    
+
+        seed = np.random.randint(0, 2**32, dtype=np.uint64)
+        print(f"Seed used: {seed}")
+        model = train_to_submit(X,Y, seed=seed)
+        print("model: ", model.get_params(deep=True))
+        print("Coefficients: ", model.coef_)
+        print("Bias: ", model.intercept_)
+        
+        with sqlite3.connect(database_path) as conn:
+            cur = conn.cursor()
+            X_test, _ = load_datapoints(conn, test=True)
+            X_test = X_test.sort_values(by="id_battle")
+            X_test = X_test.filter(items=selected)
+            X_test = scale_input(X_test)    
+
+            create_submission(cur, model, X_test)
 
     else:
         print(f"[ERROR] unknown command {command}")

@@ -8,7 +8,7 @@ from copy import deepcopy
 
 
 import sklearn
-from sklearn.preprocessing import OneHotEncoder, StandardScaler, MultiLabelBinarizer
+from sklearn.preprocessing import OneHotEncoder, StandardScaler, MultiLabelBinarizer, MinMaxScaler
 from sklearn.decomposition import PCA
 from sklearn.linear_model import LogisticRegressionCV
 from sklearn.model_selection import train_test_split
@@ -229,11 +229,8 @@ def get_datapoints(cur: sqlite3.Cursor, _set: str) -> tuple[pd.DataFrame, pd.Dat
     
     for id in tqdm(range(n_points), desc="datapoints"):
         X, Y = get_teams_features(cur, id, _set,X, Y)
-        
-    scaler = StandardScaler()
-    X_scaled = scaler.fit_transform(X)
 
-    return X_scaled, Y
+    return X, Y
        
     
 # Ritornare un dataframe e una serie con 0 o 1
@@ -325,11 +322,12 @@ def save_datapoints(conn: sqlite3.Connection, X: pd.DataFrame, Y: pd.DataFrame, 
 def load_datapoints(conn: sqlite3.Connection, test: bool = False) -> tuple[pd.DataFrame, pd.DataFrame]:
     X_table = 'TestInput' if test else 'Input'
     Y_table = 'TestOutput' if test else 'Output'
-    X = pd.read_sql('SELECT * FROM Input', conn)
-    Y = pd.read_sql('SELECT * FROM Output', conn)
+    X = pd.read_sql(f'SELECT * FROM {X_table}', conn)
+    Y = pd.read_sql(f'SELECT * FROM {Y_table}', conn)
+
     return X, Y
 
-def train(X: pd.DataFrame,Y: pd.DataFrame, seed: int=42, n_jobs=4):
+def train(X: pd.DataFrame,Y: pd.DataFrame, seed: int=42, n_jobs=8):
     
     rng = np.random.default_rng(seed)
     split_seed = rng.integers(0, 2**32 - 1)
@@ -347,12 +345,19 @@ def train(X: pd.DataFrame,Y: pd.DataFrame, seed: int=42, n_jobs=4):
     r2 = r2_score(Y_val, y_pred_proba)
     return regressor, accuracy, r2
 
-def create_submission(model: Any, X_test: pd.DataFrame, test_df: pd.DataFrame) -> None:
+def train_to_submit(X: pd.DataFrame,Y: pd.DataFrame, seed: int=42, n_jobs=8):    
+    regressor = LogisticRegressionCV(cv=5,n_jobs=n_jobs, max_iter=10000, random_state=seed)
+    regressor.fit(X,Y)
+    return regressor
+
+def create_submission(cur: sqlite3.Cursor, model: Any, X_test: pd.DataFrame) -> None:
     #TODO caricare i dati di test e fare le predizioni
     # Make predictions on the test data
+    test_df = find_test_id(cur)
+
     print("Generating predictions on the test set...")
     test_predictions = model.predict(X_test)
-
+    print(f"Predictions generated. {test_predictions}")
     # Create the submission DataFrame
     submission_df = pd.DataFrame({
         'battle_id': test_df['battle_id'],
@@ -363,4 +368,21 @@ def create_submission(model: Any, X_test: pd.DataFrame, test_df: pd.DataFrame) -
     submission_df.to_csv('submission.csv', index=False)
 
     print("\n'submission.csv' file created successfully!")
-    display(submission_df.head())
+    #display(submission_df.head())
+
+def scale_input(X: pd.DataFrame) -> pd.DataFrame:
+    X = X.drop(columns=["id_battle"], errors='ignore')
+    #scaler = StandardScaler()
+    scaler = MinMaxScaler()
+    X_scaled = scaler.fit_transform(X)
+    return X_scaled
+
+def find_test_id(cur: sqlite3.Cursor) -> int:
+    cur.execute("SELECT count(*) FROM Dataset as d, bat_dat bd WHERE d.type = 'Test' and bd.dataset = d.id")
+    n_points = into_dict(cur)[0]["count(*)"]
+
+    df = pd.DataFrame({
+        "battle_id": np.arange(5000)  # genera numeri da 0 a 4999
+    })
+
+    return df
