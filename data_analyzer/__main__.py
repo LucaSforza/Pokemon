@@ -101,26 +101,21 @@ def main():
             print(f"Status2:\n{status2}")
 
     elif command == "pca":
-        _set = sys.argv[3]
-        all_status = pd.DataFrame()
-        all_results = pd.DataFrame()
+        # _set = sys.argv[3]
 
         with sqlite3.connect(database_path) as conn:
             conn.row_factory = sqlite3.Row
             cur = conn.cursor()
-  
-            for battle_id in range(10000): # TODO: piu generico
-                all_status, all_results = get_teams_features(cur, battle_id, _set, all_status, all_results)            
-            
-            scaler = StandardScaler()
-            all_status_scaled = scaler.fit_transform(all_status)
 
+            X, Y = load_datapoints(conn)
+            
+            X = X.drop(columns=["id_battle"])
             pca = PCA(n_components=0.95)  # conserva il 95% della varianza
-            pca_result = pca.fit_transform(all_status_scaled)
+            pca_result = pca.fit_transform(X)
 
             explained = pd.Series(pca.explained_variance_ratio_, index=[f'PC{i+1}' for i in range(len(pca.explained_variance_ratio_))])
 
-            components = pd.DataFrame(pca.components_, columns=all_status.columns)
+            components = pd.DataFrame(pca.components_, columns=X.columns)
 
             # Prendi la prima componente principale (PC1)
             pc1_importance = components.loc[0].abs().sort_values(ascending=False)
@@ -145,9 +140,11 @@ def main():
 
             #Stampo dizionario con le componenti principali in ordine di importanza
             print("Importanza delle caratteristiche (colonne) nella PCA:")
+            
             for feature, importance in total_importance.items():
                 print(f"{feature}: {importance}")
-
+            with open("pca.json", "w") as f:
+                f.write(json.dumps(total_importance.to_dict(), indent=2))
 
     elif command == "train":
         # da capire 'solver' cosa fa
@@ -165,15 +162,32 @@ def main():
         Y = Y.drop(columns=["id_battle"])
         X = X.drop(columns=["id_battle"])
         
+        total_importance = None
+        
+        with open("pca.json", "r") as f:
+            total_importance = json.load(f)
+        
+        # calcolo varianza cumulativa
+        sorted_items = sorted(total_importance.items(), key=lambda x: x[1], reverse=True)
+        values = np.array([v for _, v in sorted_items])
+        cum = np.cumsum(values) / np.sum(values)
+
+        idx = np.argmax(cum >= 0.995)
+        selected = [f for f, _ in sorted_items[: idx + 1]]
+        print(selected)
+        X = X.filter(items=selected)
         
         np.random.seed(42)
-        numbers = np.random.randint(0, 2**32, size=10) 
+        numbers = np.random.randint(0, 2**32, size=30)
+        total_accuracy = 0
         for seed in numbers:
             model, accuracy = train(X,Y, seed=seed)
+            total_accuracy += accuracy
             print("------------------")
             print(f"seed: {seed}")
             print("model: ", model.get_params(deep=True))
             print("Accuracy: ",accuracy)
+        print(f"Mean accuracy: {total_accuracy/len(numbers)}")
         
     elif command == "save_train_data":
         with sqlite3.connect(database_path) as conn:

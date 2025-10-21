@@ -14,7 +14,7 @@ from sklearn.metrics import mean_squared_error
 from sklearn.metrics import accuracy_score
 from matplotlib import pyplot as plt
 
-from IPython.display import display
+#from IPython.display import display
 from joblib import parallel_backend
 from tqdm import tqdm
 import warnings
@@ -226,8 +226,11 @@ def get_datapoints(cur: sqlite3.Cursor, _set: str) -> tuple[pd.DataFrame, pd.Dat
     
     for id in tqdm(range(n_points), desc="datapoints"):
         X, Y = get_teams_features(cur, id, _set,X, Y)
+        
+    scaler = StandardScaler()
+    X_scaled = scaler.fit_transform(X)
 
-    return X, Y
+    return X_scaled, Y
        
     
 # Ritornare un dataframe e una serie con 0 o 1
@@ -325,10 +328,13 @@ def load_datapoints(conn: sqlite3.Connection, test: bool = False) -> tuple[pd.Da
 
 def train(X: pd.DataFrame,Y: pd.DataFrame, seed: int =42):
     
+    rng = np.random.default_rng(seed)
+    split_seed = rng.integers(0, 2**32 - 1)
+    model_seed = rng.integers(0, 2**32 - 1)
     
-    regressor = LogisticRegressionCV(cv=5, max_iter=2000, random_state=seed)
+    regressor = LogisticRegressionCV(cv=5, max_iter=2000, random_state=model_seed)
     
-    X_train, X_val, Y_train, Y_val = train_test_split(X,Y, test_size=0.2, random_state=42)
+    X_train, X_val, Y_train, Y_val = train_test_split(X,Y, test_size=0.2, random_state=split_seed)
     
     minimum_val_error = float("inf")  # start with infinity
     best_epoch = None
