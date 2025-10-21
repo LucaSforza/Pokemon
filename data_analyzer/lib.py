@@ -329,13 +329,13 @@ def load_datapoints(conn: sqlite3.Connection, test: bool = False) -> tuple[pd.Da
     Y = pd.read_sql('SELECT * FROM Output', conn)
     return X, Y
 
-def train(X: pd.DataFrame,Y: pd.DataFrame, seed: int =42):
+def train(X: pd.DataFrame,Y: pd.DataFrame, seed: int =42, n_jobs=4):
     
     rng = np.random.default_rng(seed)
     split_seed = rng.integers(0, 2**32 - 1)
     model_seed = rng.integers(0, 2**32 - 1)
     
-    regressor = LogisticRegressionCV(cv=5, max_iter=10000, random_state=model_seed)
+    regressor = LogisticRegressionCV(cv=5,n_jobs=n_jobs, max_iter=10000, random_state=model_seed)
     
     X_train, X_val, Y_train, Y_val = train_test_split(X,Y, test_size=0.2, random_state=split_seed)
     
