@@ -99,7 +99,7 @@ class KNeighborsClassifierTrainer(ModelTrainer):
         mean_acc = grid.best_score_
         return self.get_best_hyperparams(grid.best_estimator_), mean_acc
 
-# TODO: fare model selection con iteratore
+# TODO: Convertire al nuovo sistema
 class XGBClassifierTrainer(ModelTrainer):
     
     def fit(self,X: np.ndarray, Y: np.ndarray, cv=5, n_jobs=8, seed=42) -> tuple[Model, float]:
@@ -159,6 +159,8 @@ class RandomForestClassifierTrainer(ModelTrainer):
         mean_acc = grid.best_score_
         return self.get_best_hyperparams(grid.best_estimator_), mean_acc
 
+# TODO: convertire al nuovo sistema 
+# Comunque è sempre retro compatibile questo codice
 class DecisionTreeClassifierTrainer(ModelTrainer):
     
     def fit(self,X: np.ndarray, Y:np.ndarray, cv=5, n_jobs=4, seed=42, patience=20, epochs=1000) -> tuple[Model,float]:
