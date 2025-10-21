@@ -14,6 +14,7 @@ from sklearn.metrics import mean_squared_error
 from sklearn.metrics import accuracy_score
 from matplotlib import pyplot as plt
 
+from IPython.display import display
 from joblib import parallel_backend
 from tqdm import tqdm
 import warnings
