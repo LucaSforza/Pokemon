@@ -329,7 +329,7 @@ def load_datapoints(conn: sqlite3.Connection, test: bool = False) -> tuple[pd.Da
     Y = pd.read_sql('SELECT * FROM Output', conn)
     return X, Y
 
-def train(X: pd.DataFrame,Y: pd.DataFrame, seed: int =42, n_jobs=4):
+def train(X: pd.DataFrame,Y: pd.DataFrame, seed: int=42, n_jobs=4):
     
     rng = np.random.default_rng(seed)
     split_seed = rng.integers(0, 2**32 - 1)
@@ -339,33 +339,14 @@ def train(X: pd.DataFrame,Y: pd.DataFrame, seed: int =42, n_jobs=4):
     
     X_train, X_val, Y_train, Y_val = train_test_split(X,Y, test_size=0.2, random_state=split_seed)
     
-    minimum_val_error = float("inf")  # start with infinity
-    best_epoch = None
-    best_model: LogisticRegressionCV = None
-    best_accuracy = 0
-    
-    val_errors: list[float] = []
-    train_set_errors: list[float] = []
-    #for epoch in tqdm(range(n_epochs), desc="Epochs"):
     regressor.fit(X_train,Y_train)
     Y_pred = regressor.predict(X_val)
-    Y_train_pred = regressor.predict(X_train)
-    val_train_error = mean_squared_error(Y_train, Y_train_pred)
-    val_error: float = mean_squared_error(Y_val, Y_pred)
-    val_errors.append(val_error)
-    train_set_errors.append(val_train_error)
     accuracy: float = accuracy_score(Y_val, Y_pred)
-    # If this epoch gives the best validation error so far, save the model
-    if val_error < minimum_val_error:
-        minimum_val_error = val_error
-        #if best_accuracy < accuracy:
-        #    print("[FATAL ERROR] the accuracy must be below best_accuracy")
-        #    exit(1)
-        best_accuracy = accuracy
-        best_model = deepcopy(regressor)  # clone creates an independent copy of the model
-    y_pred_proba = best_model.predict_proba(X_val)[:,1]  # probabilità di classe 1
+    
+    y_pred_proba = regressor.predict_proba(X_val)[:,1]  # probabilità di classe 1
     r2 = r2_score(Y_val, y_pred_proba)
-    return best_model, best_accuracy, r2
+    return regressor, accuracy, r2
+
 def create_submission(model: Any, X_test: pd.DataFrame, test_df: pd.DataFrame) -> None:
     #TODO caricare i dati di test e fare le predizioni
     # Make predictions on the test data
