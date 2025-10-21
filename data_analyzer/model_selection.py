@@ -72,3 +72,34 @@ class KNeighborsClassifierTrainer(ModelTrainer):
         grid.fit(X, Y)
         mean_acc = grid.best_score_
         return grid.best_estimator_, mean_acc
+
+class XGBClassifierTrainer(ModelTrainer):
+    
+    def fit(X: np.ndarray, Y: np.ndarray, cv=5, n_jobs=8, seed=42) -> tuple[Model, float]:
+        model = XGBClassifier(
+            objective="binary:logistic",
+            random_state=seed,
+            use_label_encoder=False,
+            eval_metric="logloss"
+        )
+
+        param_grid = {
+            "n_estimators": [100, 200, 300],
+            "max_depth": [3, 5, 7],
+            "learning_rate": [0.01, 0.05, 0.1],
+            "subsample": [0.8, 1.0],
+            "colsample_bytree": [0.8, 1.0],
+        }
+
+        grid = GridSearchCV(
+            estimator=model,
+            param_grid=param_grid,
+            scoring="accuracy",
+            cv=cv,
+            n_jobs=n_jobs,
+            verbose=1
+        )
+
+        grid.fit(X, Y)
+        mean_acc = grid.best_score_
+        return grid.best_estimator_, mean_acc
