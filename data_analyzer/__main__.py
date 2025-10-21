@@ -1,7 +1,5 @@
 import sys
 
-from sklearn import clone
-
 from lib import *
 
 PROGRAM_NAME = sys.argv[0]
@@ -147,10 +145,12 @@ def main():
                 f.write(json.dumps(total_importance.to_dict(), indent=2))
 
     elif command == "train":
-        # da capire 'solver' cosa fa
+        variance = None
+        try:
+            variance = float(sys.argv[3])
+        except IndexError:
+            variance = 0.995
         
-        
-        #TODO generalizzare funzione load_datapoints per train e test in base a variabile _set da passare
         with sqlite3.connect(database_path) as conn:
             cur = conn.cursor()
             X,Y = load_datapoints(conn)
@@ -172,22 +172,31 @@ def main():
         values = np.array([v for _, v in sorted_items])
         cum = np.cumsum(values) / np.sum(values)
 
-        idx = np.argmax(cum >= 0.995)
+        idx = np.argmax(cum >= variance)
         selected = [f for f, _ in sorted_items[: idx + 1]]
         print(selected)
         X = X.filter(items=selected)
         
         np.random.seed(42)
         numbers = np.random.randint(0, 2**32, size=30)
-        total_accuracy = 0
+        total_accuracy = 0.0
+        total_bias = 0.0
+        total_r2 = 0.0
         for seed in numbers:
-            model, accuracy = train(X,Y, seed=seed)
-            total_accuracy += accuracy
             print("------------------")
+            model, accuracy, r2 = train(X,Y, seed=seed)
+            total_accuracy += accuracy
+            total_bias += model.intercept_[0]
+            total_r2 += r2
             print(f"seed: {seed}")
             print("model: ", model.get_params(deep=True))
             print("Accuracy: ",accuracy)
+            print("Coefficients: ", model.coef_)
+            print("Bias: ", model.intercept_)
+            print("R2: ", r2)
         print(f"Mean accuracy: {total_accuracy/len(numbers)}")
+        print(f"Mean bias: {total_bias/len(numbers)}")
+        print(f"Mean R2: {total_r2/len(numbers)}")
         
     elif command == "save_train_data":
         with sqlite3.connect(database_path) as conn:

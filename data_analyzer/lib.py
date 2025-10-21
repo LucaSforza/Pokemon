@@ -4,6 +4,8 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
+from copy import deepcopy
+
 
 import sklearn
 from sklearn.preprocessing import OneHotEncoder, StandardScaler, MultiLabelBinarizer
@@ -13,6 +15,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error
 from sklearn.metrics import accuracy_score
 from matplotlib import pyplot as plt
+from sklearn.metrics import r2_score
 
 #from IPython.display import display
 from joblib import parallel_backend
@@ -332,7 +335,7 @@ def train(X: pd.DataFrame,Y: pd.DataFrame, seed: int =42):
     split_seed = rng.integers(0, 2**32 - 1)
     model_seed = rng.integers(0, 2**32 - 1)
     
-    regressor = LogisticRegressionCV(cv=5, max_iter=2000, random_state=model_seed)
+    regressor = LogisticRegressionCV(cv=5, max_iter=10000, random_state=model_seed)
     
     X_train, X_val, Y_train, Y_val = train_test_split(X,Y, test_size=0.2, random_state=split_seed)
     
@@ -359,12 +362,10 @@ def train(X: pd.DataFrame,Y: pd.DataFrame, seed: int =42):
         #    print("[FATAL ERROR] the accuracy must be below best_accuracy")
         #    exit(1)
         best_accuracy = accuracy
-        best_epoch = 0
-        best_model = sklearn.clone(regressor)  # clone creates an independent copy of the model
-    print(f"Best epoch: {best_epoch}")
-    print(f"Best model: {best_model.get_params(deep=True)}")
-    print(f"Best accuracy: {best_accuracy}")
-    return best_model, best_accuracy
+        best_model = deepcopy(regressor)  # clone creates an independent copy of the model
+    y_pred_proba = best_model.predict_proba(X_val)[:,1]  # probabilità di classe 1
+    r2 = r2_score(Y_val, y_pred_proba)
+    return best_model, best_accuracy, r2
 def create_submission(model: Any, X_test: pd.DataFrame, test_df: pd.DataFrame) -> None:
     #TODO caricare i dati di test e fare le predizioni
     # Make predictions on the test data
