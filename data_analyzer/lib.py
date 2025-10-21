@@ -334,17 +334,12 @@ def load_datapoints(conn: sqlite3.Connection, test: bool = False) -> tuple[pd.Da
 
     return X, Y
 
-def train(X: pd.DataFrame,Y: pd.DataFrame, seed: int=42, n_jobs=8):
+# DEPREACATED
+def train(X: pd.DataFrame,Y: pd.DataFrame,trainer: RandomForestClassifier, seed: int=42):
+    print(f"[WARNING] Deprecrated at function 'train'")
     
-    rng = np.random.default_rng(seed)
-    split_seed = rng.integers(0, 2**32 - 1)
-    model_seed = rng.integers(0, 2**32 - 1)
-    
-    regressor = LogisticRegressionCV(cv=5,n_jobs=n_jobs, max_iter=10000, random_state=model_seed)
-    
-    X_train, X_val, Y_train, Y_val = train_test_split(X,Y, test_size=0.2, random_state=split_seed)
-    
-    regressor.fit(X_train,Y_train)
+    X_train, X_val, Y_train, Y_val = train_test_split(X,Y, test_size=0.2, random_state=seed)
+    regressor = trainer.fit(X_train, Y_train)
     Y_pred = regressor.predict(X_val)
     accuracy: float = accuracy_score(Y_val, Y_pred)
     

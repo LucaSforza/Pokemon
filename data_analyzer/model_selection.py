@@ -12,15 +12,35 @@ class Model(ABC):
     def predict(self,X: np.ndarray) -> np.ndarray:
         ...
     
-    @abstractmethod
-    def get_model_type(self,) -> type:
-        ...
-
+# TODO: fare in modo che faccia il plot della validazione durante la validazione
 class ModelTrainer(ABC):
     
     @abstractmethod
-    def fit(self, X: np.ndarray, Y:np.ndarray, cv=5, n_jobs=8, seed=42, patience=10, epochs=100) -> tuple[Model,float]:
+    def get_best_hyperparams(self, model: Any) -> dict[str, Any]:
         ...
+    
+    @abstractmethod
+    def cross_validation(self, size: int, X: np.ndarray, Y: np.ndarray) -> tuple[Model, float]:
+        ...
+    
+    def fit(self, X: np.ndarray, Y:np.ndarray, cv=5, n_jobs=8, seed=42, patience=100, epochs=1000) -> tuple[Model,float]:
+        self.seed = seed
+        self.n_job = n_jobs
+        self.cv = cv
+        best_model = None
+        best_accuracy = None
+        no_improve = 0
+        for size in tqdm(range(1,epochs+1)):
+            model, mean_acc = self.cross_validation(size, X, Y)
+            if best_accuracy is None or best_accuracy < mean_acc:
+                best_accuracy = mean_acc
+                best_model = model
+                no_improve = 0
+            else:
+                no_improve += 1
+                if no_improve >= patience:
+                    break
+        return best_model, best_accuracy
 
 
 def model_selections(models: dict[str, ModelTrainer], X: np.ndarray, Y: np.ndarray,seed=42, n_jobs=8) -> dict[str, Any]:
@@ -53,37 +73,33 @@ class RidgeTrainer(ModelTrainer):
     
 class KNeighborsClassifierTrainer(ModelTrainer):
     
-    def fit(self,X: np.ndarray, Y:np.ndarray, cv=5, n_jobs=8, seed=42, patience=100, epochs=1000) -> tuple[Model,float]:
-        
-        kf = KFold(n_splits=cv, shuffle=True, random_state=seed)
-        
-        best_model = None
-        best_accuracy = None
-        no_improve = 0
-        for size in tqdm(range(1,epochs), desc="k-neighbors"):
-            tot_accuracy = 0.0
-            i = 0
-            model = None
-            for train_idx, test_idx in kf.split(X):
-                model = KNeighborsClassifier(n_neighbors=size)
-                i += 1
-                X_train, X_val = X[train_idx], X[test_idx]
-                Y_train, Y_val = Y[train_idx], Y[test_idx]
-                model.fit(X_train, Y_train)
-                Y_pred = model.predict(X_val)
-                accuracy = accuracy_score(Y_val, Y_pred)
-                tot_accuracy += accuracy
-            mean_acc = tot_accuracy/i
-            if best_accuracy is None or best_accuracy < mean_acc:
-                best_accuracy = mean_acc
-                best_model = model
-                no_improve = 0
-            else:
-                no_improve += 1
-                if no_improve >= patience:
-                    break
-        return best_model, best_accuracy
+    def get_best_hyperparams(self, model) -> dict[str, Any]:
+        model: KNeighborsClassifier = model
+        return model.get_params(deep=True)
+    
+    def cross_validation(self, size: int, X: np.ndarray, Y: np.ndarray):
+        model = KNeighborsClassifier(
+            n_neighbors = size
+        )
 
+        param_grid = {
+            "weights": ["uniform", "distance"],
+            "p": [1, 2],
+        }
+
+        grid = GridSearchCV(
+            estimator=model,
+            param_grid=param_grid,
+            scoring="accuracy",
+            cv=self.cv,
+            n_jobs=self.n_job
+        )
+
+        grid.fit(X, Y)
+        mean_acc = grid.best_score_
+        return self.get_best_hyperparams(grid.best_estimator_), mean_acc
+
+# TODO: fare model selection con iteratore
 class XGBClassifierTrainer(ModelTrainer):
     
     def fit(self,X: np.ndarray, Y: np.ndarray, cv=5, n_jobs=8, seed=42) -> tuple[Model, float]:
@@ -117,35 +133,31 @@ class XGBClassifierTrainer(ModelTrainer):
     
 class RandomForestClassifierTrainer(ModelTrainer):
     
-    def fit(self,X: np.ndarray, Y:np.ndarray, cv=5, n_jobs=2, seed=42, patience=100, epochs=1000) -> tuple[Model,float]:
-        kf = KFold(n_splits=cv, shuffle=True, random_state=seed)
-        
-        best_model = None
-        best_accuracy = None
-        no_improve = 0
-        for size in tqdm(range(20,epochs), desc="random fortest"):
-            tot_accuracy = 0.0
-            i = 0
-            model = None
-            for train_idx, test_idx in kf.split(X):
-                model = RandomForestClassifier(max_depth=size, n_jobs=n_jobs)
-                i += 1
-                X_train, X_val = X[train_idx], X[test_idx]
-                Y_train, Y_val = Y[train_idx], Y[test_idx]
-                model.fit(X_train, Y_train)
-                Y_pred = model.predict(X_val)
-                accuracy = accuracy_score(Y_val, Y_pred)
-                tot_accuracy += accuracy
-            mean_acc = tot_accuracy/i
-            if best_accuracy is None or best_accuracy < mean_acc:
-                best_accuracy = mean_acc
-                best_model = model
-                no_improve = 0
-            else:
-                no_improve += 1
-                if no_improve >= patience:
-                    break
-        return best_model, best_accuracy
+    def get_best_hyperparams(self, model) -> dict[str, Any]:
+        model: RandomForestClassifier = model
+        return model.get_params(deep=True)
+    
+    def cross_validation(self, size: int, X: np.ndarray, Y: np.ndarray) -> tuple[Model,float]:
+        model = RandomForestClassifier(
+            max_depth=size
+        )
+
+        param_grid = {
+            "criterion": ['gini', 'entropy'],
+            "max_features": ['sqrt', 'log2'],
+        }
+
+        grid = GridSearchCV(
+            estimator=model,
+            param_grid=param_grid,
+            scoring="accuracy",
+            cv=self.cv,
+            n_jobs=self.n_job
+        )
+
+        grid.fit(X, Y)
+        mean_acc = grid.best_score_
+        return self.get_best_hyperparams(grid.best_estimator_), mean_acc
 
 class DecisionTreeClassifierTrainer(ModelTrainer):
     

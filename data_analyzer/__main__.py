@@ -150,7 +150,7 @@ def main():
         try:
             variance = float(sys.argv[3])
         except IndexError:
-            variance = 0.995
+            variance = 0.999
         
         with sqlite3.connect(database_path) as conn:
             cur = conn.cursor()
@@ -179,24 +179,29 @@ def main():
         X = scale_input(X)     
         
         np.random.seed(42)
-        numbers = np.random.randint(0, 2**32, size=30, dtype=np.uint64)
+        numbers = np.random.randint(0, 2**32, size=100, dtype=np.uint64)
         total_accuracy = 0.0
         total_bias = 0.0
         total_r2 = 0.0
+        
         for seed in numbers:
+            rng = np.random.default_rng(seed)
+            split_seed = rng.integers(0, 2**32 - 1)
+            model_seed = rng.integers(0, 2**32 - 1)
+            trainer = RandomForestClassifier(criterion="entropy", max_depth=97, max_features='sqrt', random_state=model_seed)
             print("------------------")
-            model, accuracy, r2 = train(X,Y, seed=seed)
+            model, accuracy, r2 = train(X,Y,trainer, seed=split_seed)
             total_accuracy += accuracy
-            total_bias += model.intercept_[0]
+            # total_bias += model.
             total_r2 += r2
             print(f"seed: {seed}")
             print("model: ", model.get_params(deep=True))
             print("Accuracy: ",accuracy)
-            print("Coefficients: ", model.coef_)
-            print("Bias: ", model.intercept_)
+            # print("Coefficients: ", model.coef_)
+            # print("Bias: ", model.intercept_)
             print("R2: ", r2)
         print(f"Mean accuracy: {total_accuracy/len(numbers)}")
-        print(f"Mean bias: {total_bias/len(numbers)}")
+        # print(f"Mean bias: {total_bias/len(numbers)}")
         print(f"Mean R2: {total_r2/len(numbers)}")
         
     elif command == "save_train_data":
@@ -266,10 +271,10 @@ def main():
             X,Y = prepare_data(conn, 0.999)
 
         models = {
-            #"KNN": KNeighborsClassifierTrainer(),
+             "KNN": KNeighborsClassifierTrainer(),
             #"LogisticRegressionCV": LogisticRegressionTrainer(),
             #"DecisionTreeClassifier": DecisionTreeClassifierTrainer(),
-            "RandomForest": RandomForestClassifierTrainer(),
+            # "RandomForest": RandomForestClassifierTrainer(),
             # "XGB": XGBClassifierTrainer(),
             # "RidgeCV": RidgeTrainer(),
         }
