@@ -221,7 +221,7 @@ def main():
         try:
             variance = float(sys.argv[3])
         except IndexError:
-            variance = 0.995
+            variance = 0.999
         
         with sqlite3.connect(database_path) as conn:
             cur = conn.cursor()
@@ -252,9 +252,6 @@ def main():
         seed = np.random.randint(0, 2**32, dtype=np.uint64)
         print(f"Seed used: {seed}")
         model = train_to_submit(X,Y, seed=seed)
-        print("model: ", model.get_params(deep=True))
-        print("Coefficients: ", model.coef_)
-        print("Bias: ", model.intercept_)
         
         with sqlite3.connect(database_path) as conn:
             cur = conn.cursor()

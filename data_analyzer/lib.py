@@ -348,7 +348,13 @@ def train(X: pd.DataFrame,Y: pd.DataFrame,trainer: RandomForestClassifier, seed:
     return regressor, accuracy, r2
 
 def train_to_submit(X: pd.DataFrame,Y: pd.DataFrame, seed: int=42, n_jobs=8):    
-    regressor = LogisticRegressionCV(cv=5,n_jobs=n_jobs, max_iter=10000, random_state=seed)
+    regressor = RandomForestClassifier(
+        n_jobs=n_jobs, 
+        random_state=seed,
+        max_depth=97,
+        max_features='sqrt',
+        criterion='entropy'
+    )
     regressor.fit(X,Y)
     return regressor
 
