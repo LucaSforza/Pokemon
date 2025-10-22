@@ -58,19 +58,43 @@ def model_selections(models: dict[str, ModelTrainer], X: np.ndarray, Y: np.ndarr
 
 class LogisticRegressionTrainer(ModelTrainer):
     
-    def fit(self,X: np.ndarray, Y:np.ndarray, cv=5, n_jobs=8, seed=42) -> tuple[Model,float]:
+    def get_best_hyperparams(self, model) -> dict[str, Any]:
+        model: LogisticRegressionCV = model
+        return model.get_params(deep=True)
+    
+    def cross_validation(self, size, X, Y):
+        print("[ERROR] not implemented LogisticRegressionTrainer.cross_validation")
+        exit(1)
+    
+    def fit(self,X: np.ndarray, Y:np.ndarray, cv=5, n_jobs=8, seed=42) -> tuple[Model,float, list]:
         model = LogisticRegressionCV(cv=cv,random_state=seed, n_jobs=n_jobs)
         model.fit(X,Y)
-        mean_acc = np.mean([v.mean() for v in model.scores_.values()])
-        return model, mean_acc
+        total_acc = 0.0
+        for test in [value for (_key, value) in model.scores_.items()][0]:
+            total_acc += test.max()
+        validation_error = []
+        for test in zip(*[value for (_key, value) in model.scores_.items()][0]):
+            tot = 0.0
+            for value in test:
+                tot += value
+            validation_error.append(1.0 - (tot/cv))
+        return model, total_acc/cv, validation_error
     
 class RidgeTrainer(ModelTrainer):
     
-    def fit(self,X: np.ndarray, Y:np.ndarray, cv=5, n_jobs=8, seed=42) -> tuple[Model,float]:
+    def get_best_hyperparams(self, model) -> dict[str, Any]:
+        model: LogisticRegressionCV = model
+        return model.get_params(deep=True)
+    
+    def cross_validation(self, size, X, Y):
+        print("[ERROR] not implemented LogisticRegressionTrainer.cross_validation")
+        exit(1)
+    
+    def fit(self,X: np.ndarray, Y:np.ndarray, cv=5, n_jobs=8, seed=42) -> tuple[Model,float, list]:
         model = RidgeCV(cv=cv)
         model.fit(X,Y)
-        mean_acc = np.mean([v.mean() for v in model.scores_.values()])
-        return model, mean_acc
+        mean_acc = model.best_score_
+        return model, mean_acc, []
     
 class KNeighborsClassifierTrainer(ModelTrainer):
     

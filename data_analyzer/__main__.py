@@ -276,7 +276,7 @@ def main():
             # "RidgeCV": RidgeTrainer(),
         #}
         
-        model = KNeighborsClassifierTrainer()
+        model = RidgeTrainer()
         
         best_model, acc, validations = model.fit(X,Y)
         
