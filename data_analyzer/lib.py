@@ -137,7 +137,7 @@ def get_team_pokemon_avg(cur: sqlite3.Cursor, id_battle: int) -> pd.DataFrame:
     cur.execute("""
     SELECT avg(Pkm.base_hp) as base_hp, avg(Pkm.base_atk) as base_atk, avg(Pkm.base_def) as base_def, avg(Pkm.base_spa) as base_spa, avg(Pkm.base_spd) as base_spd, avg(Pkm.base_spe) as base_spe
     FROM Pokemon AS Pkm, TeamP1 as tp
-    WHERE tp.id = ? AND Pkm.name = tp.pokemon
+    WHERE tp.battle = ? AND Pkm.name = tp.pokemon
     """, (id_battle,))
 
     return into_dataframe(cur)

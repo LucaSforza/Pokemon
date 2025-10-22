@@ -62,12 +62,13 @@ class LogisticRegressionTrainer(ModelTrainer):
         model: LogisticRegressionCV = model
         return model.get_params(deep=True)
     
-    def cross_validation(self, size, X, Y):
-        print("[ERROR] not implemented LogisticRegressionTrainer.cross_validation")
+    def cross_validation(self, size: int, X: np.ndarray, Y: np.ndarray)-> tuple[Model, float]:
+        print("[ERROR] LogisticRegressionTrainer.cross_validation is not implemented, don't call this function Luca SFORZA")
         exit(1)
+        
     
     def fit(self,X: np.ndarray, Y:np.ndarray, cv=5, n_jobs=8, seed=42) -> tuple[Model,float, list]:
-        model = LogisticRegressionCV(cv=cv,random_state=seed, n_jobs=n_jobs)
+        model = LogisticRegressionCV(cv=cv,random_state=seed, n_jobs=n_jobs, max_iter=10000)
         model.fit(X,Y)
         total_acc = 0.0
         for test in [value for (_key, value) in model.scores_.items()][0]:
@@ -78,7 +79,7 @@ class LogisticRegressionTrainer(ModelTrainer):
             for value in test:
                 tot += value
             validation_error.append(1.0 - (tot/cv))
-        return model, total_acc/cv, validation_error
+        return self.get_best_hyperparams(model), total_acc/cv, validation_error
     
 class RidgeTrainer(ModelTrainer):
     

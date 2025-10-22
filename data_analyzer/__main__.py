@@ -276,7 +276,7 @@ def main():
             # "RidgeCV": RidgeTrainer(),
         #}
         
-        model = RidgeTrainer()
+        model = LogisticRegressionTrainer()
         
         best_model, acc, validations = model.fit(X,Y)
         
