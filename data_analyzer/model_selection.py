@@ -43,9 +43,9 @@ class ModelTrainer(ABC):
                     break
         return best_model, best_accuracy, validations
 
-
+# DEPRECARED
 def model_selections(models: dict[str, ModelTrainer], X: np.ndarray, Y: np.ndarray,seed=42, n_jobs=8) -> dict[str, Any]:
-    
+    print("[WARNING] model_selections deprecated function")
     rng = np.random.default_rng(seed)
     np.random.seed(seed)
     best_models = {}
