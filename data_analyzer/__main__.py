@@ -267,17 +267,28 @@ def main():
         with sqlite3.connect(database_path) as conn:
             X,Y = prepare_data(conn, 0.999)
 
-        models = {
-             "KNN": KNeighborsClassifierTrainer(),
+        #models = {
+            # "KNN": ,
             #"LogisticRegressionCV": LogisticRegressionTrainer(),
             #"DecisionTreeClassifier": DecisionTreeClassifierTrainer(),
             # "RandomForest": RandomForestClassifierTrainer(),
             # "XGB": XGBClassifierTrainer(),
             # "RidgeCV": RidgeTrainer(),
-        }
+        #}
         
-        result = model_selections(models, X,Y, seed=42, n_jobs=4)
-        print(result)
+        model = KNeighborsClassifierTrainer()
+        
+        best_model, acc, validations = model.fit(X,Y)
+        
+        print("bestModel:\n",best_model)
+        print("best_acc:\n", acc)
+        # Plot
+        plt.figure(figsize=(10,6))
+        plt.plot(range(len(validations)), validations, marker='o')
+        plt.title('Validation Error')
+        plt.xlabel('Index')
+        plt.ylabel('Validation Error')
+        plt.savefig("val.png")
         
     
     else:

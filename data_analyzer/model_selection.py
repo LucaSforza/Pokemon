@@ -23,15 +23,17 @@ class ModelTrainer(ABC):
     def cross_validation(self, size: int, X: np.ndarray, Y: np.ndarray) -> tuple[Model, float]:
         ...
     
-    def fit(self, X: np.ndarray, Y:np.ndarray, cv=5, n_jobs=8, seed=42, patience=100, epochs=1000) -> tuple[Model,float]:
+    def fit(self, X: np.ndarray, Y:np.ndarray, cv=5, n_jobs=8, seed=42, patience=100, epochs=1000) -> tuple[Model,float, list[float]]:
         self.seed = seed
         self.n_job = n_jobs
         self.cv = cv
+        validations = []
         best_model = None
         best_accuracy = None
         no_improve = 0
         for size in tqdm(range(1,epochs+1)):
             model, mean_acc = self.cross_validation(size, X, Y)
+            validations.append(1 - mean_acc)
             if best_accuracy is None or best_accuracy < mean_acc:
                 best_accuracy = mean_acc
                 best_model = model
@@ -40,7 +42,7 @@ class ModelTrainer(ABC):
                 no_improve += 1
                 if no_improve >= patience:
                     break
-        return best_model, best_accuracy
+        return best_model, best_accuracy, validations
 
 
 def model_selections(models: dict[str, ModelTrainer], X: np.ndarray, Y: np.ndarray,seed=42, n_jobs=8) -> dict[str, Any]:
