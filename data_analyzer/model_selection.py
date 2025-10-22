@@ -12,7 +12,6 @@ class Model(ABC):
     def predict(self,X: np.ndarray) -> np.ndarray:
         ...
     
-# TODO: fare in modo che faccia il plot della validazione durante la validazione
 class ModelTrainer(ABC):
     
     @abstractmethod
