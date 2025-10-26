@@ -276,7 +276,7 @@ def main():
             # "RidgeCV": RidgeTrainer(),
         }
         
-        result = model_selections(models, X,Y, seed=42, n_jobs=4)
+        result = model_selections(models, X,Y, seed=42, n_jobs=8)
         print(result)
         
     

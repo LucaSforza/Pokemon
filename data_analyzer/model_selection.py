@@ -30,8 +30,13 @@ class ModelTrainer(ABC):
         best_model = None
         best_accuracy = None
         no_improve = 0
+
+        history = []  
+        
         for size in tqdm(range(1,epochs+1)):
             model, mean_acc = self.cross_validation(size, X, Y)
+            history.append(mean_acc)
+
             if best_accuracy is None or best_accuracy < mean_acc:
                 best_accuracy = mean_acc
                 best_model = model
@@ -39,9 +44,23 @@ class ModelTrainer(ABC):
             else:
                 no_improve += 1
                 if no_improve >= patience:
+                    print(f"Early stopping at epoch {size}")
                     break
+
+        plot_history(history, type(self).__name__)
+
         return best_model, best_accuracy
 
+
+def plot_history(history: list[float], model_name: str) -> None:
+    plt.figure(figsize=(8,4))
+    plt.plot(history, label="Mean CV Accuracy", color="blue")
+    plt.xlabel("Epoch")
+    plt.ylabel("Accuracy")
+    plt.title(model_name + " - Validation Accuracy During Training")
+    plt.legend()
+    plt.grid(True)
+    plt.show()
 
 def model_selections(models: dict[str, ModelTrainer], X: np.ndarray, Y: np.ndarray,seed=42, n_jobs=8) -> dict[str, Any]:
     
@@ -163,7 +182,7 @@ class RandomForestClassifierTrainer(ModelTrainer):
 # Comunque è sempre retro compatibile questo codice
 class DecisionTreeClassifierTrainer(ModelTrainer):
     
-    def fit(self,X: np.ndarray, Y:np.ndarray, cv=5, n_jobs=4, seed=42, patience=20, epochs=1000) -> tuple[Model,float]:
+    def fit(self,X: np.ndarray, Y:np.ndarray, cv=5, n_jobs=8, seed=42, patience=20, epochs=1000) -> tuple[Model,float]:
         kf = KFold(n_splits=cv, shuffle=True, random_state=seed)
         
         best_model = None
