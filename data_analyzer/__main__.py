@@ -279,7 +279,7 @@ def main():
         model = LogisticRegressionTrainer()
         
         best_model, acc, validations = model.fit(X,Y)
-        print(f"Model:\n{json.dump(best_model, indent=2)}")
+        print(f"Model:\n{json.dumps(best_model, indent=2)}")
         print(f"accuracy: {acc}")
         plot_history(validations, "LogisticRegressionTrainer")
         
