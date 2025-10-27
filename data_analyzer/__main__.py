@@ -296,18 +296,20 @@ def main():
         files = sys.argv[3:]
         view_file = sys.argv[3]
         view_file = pd.read_csv(view_file)
-        battles = view_file.max(axis="battle_id")
+        battles = view_file["battle_id"].max()
         models = [pd.read_csv(file) for file in files ]
-        result = pd.DataFrame(columns=models[0].columns)
-        for id in range(battles):
+        result = pd.DataFrame(columns=["battle_id","player_won","confidence"])
+        print(result.columns)
+        for id in tqdm(range(battles+1)):
             labels = {}
             for model in models:
                 label = model.loc[model["battle_id"] == id, "player_won"].values[0]
-                labels[label] = labels.get(label, default=0) + 1
+                labels[label] = labels.get(label, 0) + 1
             result_label, favor = max(labels.items(), key=lambda x: x[1])
             new_entry = {"battle_id": id, "player_won": result_label, "confidence": favor}
             result.loc[len(result)] = new_entry
-        result.to_csv(output_file)            
+        result = result.drop("confidence",axis=1)
+        result.to_csv(output_file, index=False)            
             
     else:
         print(f"[ERROR] unknown command {command}")
