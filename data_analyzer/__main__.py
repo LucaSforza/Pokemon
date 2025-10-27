@@ -248,15 +248,12 @@ def main():
 
         Y = Y.drop(columns=["id_battle"])
         X = scale_input(X)    
-
-        seed = np.random.randint(0, 2**32, dtype=np.uint64)
-        print(f"Seed used: {seed}")
         
-        model = XGBClassifier(
-            random_state=seed,
-            max_depth=6,
-            reg_lambda=0.47,
-        ) 
+        model = KNeighborsClassifier(
+            n_neighbors=28,
+            weights="distance",
+            p=2,
+        )
         model.fit(X,Y)
         
         with sqlite3.connect(database_path) as conn:
@@ -272,18 +269,8 @@ def main():
         X,Y = None,None
         with sqlite3.connect(database_path) as conn:
             X,Y = prepare_data(conn, 0.999)
-
-        #models = {
-            # "KNN": ,
-            #"LogisticRegressionCV": LogisticRegressionTrainer(),
-            #"DecisionTreeClassifier": DecisionTreeClassifierTrainer(),
-            # "RandomForest": RandomForestClassifierTrainer(),
-            #"XGB": XGBClassifierTrainer()
-            # "RidgeCV": RidgeTrainer(),
-        #}
         
-        #model = LogisticRegressionTrainer()
-        model = XGBClassifierTrainer()
+        model = DecisionTreeClassifierTrainer()
 
         best_model, acc, validations = model.model_selection(X,Y)
         print(f"Model:\n{json.dumps(best_model, indent=2)}")

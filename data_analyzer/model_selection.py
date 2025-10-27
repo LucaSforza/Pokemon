@@ -104,7 +104,7 @@ class RidgeTrainer(ModelTrainer):
         print("[ERROR] not implemented LogisticRegressionTrainer.cross_validation")
         exit(1)
     
-    def fit(self,X: np.ndarray, Y:np.ndarray, cv=5, n_jobs=8, seed=42) -> tuple[Model,float, list]:
+    def model_selection(self,X: np.ndarray, Y:np.ndarray, cv=5, n_jobs=8, seed=42) -> tuple[Model,float, list]:
         model = RidgeCV(cv=cv)
         model.fit(X,Y)
         mean_acc = model.best_score_
@@ -199,32 +199,23 @@ class RandomForestClassifierTrainer(ModelTrainer):
 # Comunque è sempre retro compatibile questo codice
 class DecisionTreeClassifierTrainer(ModelTrainer):
     
-    def fit(self,X: np.ndarray, Y:np.ndarray, cv=5, n_jobs=8, seed=42, patience=20, epochs=1000) -> tuple[Model,float]:
-        kf = KFold(n_splits=cv, shuffle=True, random_state=seed)
+    def get_best_hyperparams(self, model: DecisionTreeClassifier):
+        return model.get_params()
+    
+    def cross_validation(self, size, X, Y):
+        kf = KFold(n_splits=self.cv, shuffle=True, random_state=self.seed)
         
-        best_model = None
-        best_accuracy = None
-        no_improve = 0
-        for size in tqdm(range(1,epochs), desc="decision tree"):
-            tot_accuracy = 0.0
-            i = 0
-            model = None
-            for train_idx, test_idx in kf.split(X):
-                model = DecisionTreeClassifier(max_depth=size)
-                i += 1
-                X_train, X_val = X[train_idx], X[test_idx]
-                Y_train, Y_val = Y[train_idx], Y[test_idx]
-                model.fit(X_train, Y_train)
-                Y_pred = model.predict(X_val)
-                accuracy = accuracy_score(Y_val, Y_pred)
-                tot_accuracy += accuracy
-            mean_acc = tot_accuracy/i
-            if best_accuracy is None or best_accuracy < mean_acc:
-                best_accuracy = mean_acc
-                best_model = model
-                no_improve = 0
-            else:
-                no_improve += 1
-                if no_improve >= patience:
-                    break
-        return best_model, best_accuracy
+        tot_accuracy = 0.0
+        i = 0
+        model = None
+        for train_idx, test_idx in kf.split(X):
+            model = DecisionTreeClassifier(max_depth=size, random_state=self.seed)
+            i += 1
+            X_train, X_val = X[train_idx], X[test_idx]
+            Y_train, Y_val = Y[train_idx], Y[test_idx]
+            model.fit(X_train, Y_train)
+            Y_pred = model.predict(X_val)
+            accuracy = accuracy_score(Y_val, Y_pred)
+            tot_accuracy += accuracy
+        mean_acc = tot_accuracy/i
+        return self.get_best_hyperparams(model), mean_acc
