@@ -31,8 +31,6 @@ class ModelTrainer(ABC):
         best_accuracy = None
         no_improve = 0
 
-        history = []  
-        
         for size in tqdm(range(1,epochs+1)):
             model, mean_acc = self.cross_validation(size, X, Y)
             validations.append(1 - mean_acc)
