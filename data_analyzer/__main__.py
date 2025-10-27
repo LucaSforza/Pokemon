@@ -291,6 +291,24 @@ def main():
         plot_history(validations, type(model).__name__)
         
     
+    elif "ensable":
+        output_file = sys.argv[2]
+        files = sys.argv[3:]
+        view_file = sys.argv[3]
+        view_file = pd.read_csv(view_file)
+        battles = view_file.max(axis="battle_id")
+        models = [pd.read_csv(file) for file in files ]
+        result = pd.DataFrame(columns=models[0].columns)
+        for id in range(battles):
+            labels = {}
+            for model in models:
+                label = model.loc[model["battle_id"] == id, "player_won"].values[0]
+                labels[label] = labels.get(label, default=0) + 1
+            result_label, favor = max(labels.items(), key=lambda x: x[1])
+            new_entry = {"battle_id": id, "player_won": result_label, "confidence": favor}
+            result.loc[len(result)] = new_entry
+        result.to_csv(output_file)            
+            
     else:
         print(f"[ERROR] unknown command {command}")
         usage()
