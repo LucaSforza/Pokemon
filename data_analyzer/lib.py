@@ -347,19 +347,8 @@ def train(X: pd.DataFrame,Y: pd.DataFrame,trainer: RandomForestClassifier, seed:
     r2 = r2_score(Y_val, y_pred_proba)
     return regressor, accuracy, r2
 
-def train_to_submit(X: pd.DataFrame,Y: pd.DataFrame, seed: int=42, n_jobs=8):    
-    regressor = RandomForestClassifier(
-        n_jobs=n_jobs, 
-        random_state=seed,
-        max_depth=97,
-        max_features='sqrt',
-        criterion='entropy'
-    )
-    regressor.fit(X,Y)
-    return regressor
 
 def create_submission(cur: sqlite3.Cursor, model: Any, X_test: pd.DataFrame) -> None:
-    #TODO caricare i dati di test e fare le predizioni
     # Make predictions on the test data
     test_df = find_test_id(cur)
 
@@ -373,7 +362,7 @@ def create_submission(cur: sqlite3.Cursor, model: Any, X_test: pd.DataFrame) -> 
     })
 
     # Save the DataFrame to a .csv file
-    submission_df.to_csv('submission.csv', index=False)
+    submission_df.to_csv(f"plt/{type(model).__name__}-submission.csv", index=False)
 
     print("\n'submission.csv' file created successfully!")
     #display(submission_df.head())
@@ -420,3 +409,12 @@ def prepare_data(conn: sqlite3.Connection, variance: float):
     Y = Y.drop(columns=["id_battle"]).to_numpy()
     X = scale_input(X) 
     return X,Y
+
+def check_differences(file1: str, file2: str) -> None:
+    df1 = pd.read_csv(file1)
+    df2 = pd.read_csv(file2)
+
+    diff = df1 != df2
+
+    differenze = df1[diff.any(axis=1)]
+    print(differenze)

@@ -22,10 +22,11 @@ class ModelTrainer(ABC):
     def cross_validation(self, size: int, X: np.ndarray, Y: np.ndarray) -> tuple[Model, float]:
         ...
     
-    def fit(self, X: np.ndarray, Y:np.ndarray, cv=5, n_jobs=8, seed=42, patience=100, epochs=1000) -> tuple[Model,float, list[float]]:
+    def model_selection(self, X: np.ndarray, Y:np.ndarray, cv=5, n_jobs=8, seed=42, patience=100, epochs=1000) -> tuple[Model,float, list[float]]:
         self.seed = seed
         self.n_job = n_jobs
         self.cv = cv
+        self.epochs = epochs
         validations = []
         best_model = None
         best_accuracy = None
@@ -78,8 +79,8 @@ class LogisticRegressionTrainer(ModelTrainer):
         print("[ERROR] LogisticRegressionTrainer.cross_validation is not implemented, don't call this function Luca SFORZA")
         exit(1)
         
-    
-    def fit(self,X: np.ndarray, Y:np.ndarray, cv=5, n_jobs=8, seed=42) -> tuple[Model,float, list]:
+
+    def model_selection(self,X: np.ndarray, Y:np.ndarray, cv=5, n_jobs=8, seed=42) -> tuple[Model,float, list]:
         model = LogisticRegressionCV(cv=cv,random_state=seed, n_jobs=n_jobs, max_iter=10000)
         model.fit(X,Y)
         total_acc = 0.0
@@ -139,36 +140,32 @@ class KNeighborsClassifierTrainer(ModelTrainer):
 
 # TODO: Convertire al nuovo sistema
 class XGBClassifierTrainer(ModelTrainer):
+    def get_best_hyperparams(self, model) -> dict[str, Any]:
+        model: XGBClassifier = model
+        return model.get_params(deep=True)
     
-    def fit(self,X: np.ndarray, Y: np.ndarray, cv=5, n_jobs=8, seed=42) -> tuple[Model, float]:
-        model = XGBClassifier(
-            objective="binary:logistic",
-            random_state=seed,
-            use_label_encoder=False,
-            eval_metric="logloss"
-        )
+    def cross_validation(self, size: int, X: np.ndarray, Y: np.ndarray)-> tuple[Model, float]:
+        kf = KFold(n_splits=self.cv, shuffle=True, random_state=self.seed)
+        tot_accuracy = 0.0
+        i = 0
+        model = None
+        for train_idx, test_idx in kf.split(X):
+            model = XGBClassifier(
+                random_state=self.seed,
+                max_depth=6,
+                reg_lambda=size/self.epochs,
+            )            
+            i += 1
+            X_train, X_val = X[train_idx], X[test_idx]
+            Y_train, Y_val = Y[train_idx], Y[test_idx]
+            model.fit(X_train, Y_train)
+            Y_pred = model.predict(X_val)
+            accuracy = accuracy_score(Y_val, Y_pred)
+            tot_accuracy += accuracy
+        mean_acc = tot_accuracy/i
 
-        param_grid = {
-            "n_estimators": [100, 200, 300],
-            "max_depth": [3, 5, 7],
-            "learning_rate": [0.01, 0.05, 0.1],
-            "subsample": [0.8, 1.0],
-            "colsample_bytree": [0.8, 1.0],
-        }
-
-        grid = GridSearchCV(
-            estimator=model,
-            param_grid=param_grid,
-            scoring="accuracy",
-            cv=cv,
-            n_jobs=n_jobs,
-            verbose=1
-        )
-
-        grid.fit(X, Y)
-        mean_acc = grid.best_score_
-        return grid.best_estimator_, mean_acc
-    
+        return self.get_best_hyperparams(model), mean_acc
+        
 class RandomForestClassifierTrainer(ModelTrainer):
     
     def get_best_hyperparams(self, model) -> dict[str, Any]:
@@ -177,7 +174,8 @@ class RandomForestClassifierTrainer(ModelTrainer):
     
     def cross_validation(self, size: int, X: np.ndarray, Y: np.ndarray) -> tuple[Model,float]:
         model = RandomForestClassifier(
-            max_depth=size
+            max_depth=size,
+            random_state=self.seed
         )
 
         param_grid = {

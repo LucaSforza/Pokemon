@@ -251,7 +251,13 @@ def main():
 
         seed = np.random.randint(0, 2**32, dtype=np.uint64)
         print(f"Seed used: {seed}")
-        model = train_to_submit(X,Y, seed=seed)
+        
+        model = XGBClassifier(
+            random_state=seed,
+            max_depth=6,
+            reg_lambda=0.47,
+        ) 
+        model.fit(X,Y)
         
         with sqlite3.connect(database_path) as conn:
             cur = conn.cursor()
@@ -272,16 +278,17 @@ def main():
             #"LogisticRegressionCV": LogisticRegressionTrainer(),
             #"DecisionTreeClassifier": DecisionTreeClassifierTrainer(),
             # "RandomForest": RandomForestClassifierTrainer(),
-            # "XGB": XGBClassifierTrainer(),
+            #"XGB": XGBClassifierTrainer()
             # "RidgeCV": RidgeTrainer(),
         #}
         
-        model = LogisticRegressionTrainer()
-        
-        best_model, acc, validations = model.fit(X,Y)
+        #model = LogisticRegressionTrainer()
+        model = XGBClassifierTrainer()
+
+        best_model, acc, validations = model.model_selection(X,Y)
         print(f"Model:\n{json.dumps(best_model, indent=2)}")
         print(f"accuracy: {acc}")
-        plot_history(validations, "LogisticRegressionTrainer")
+        plot_history(validations, type(model).__name__)
         
     
     else:
