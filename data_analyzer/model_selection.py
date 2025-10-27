@@ -12,7 +12,6 @@ class Model(ABC):
     def predict(self,X: np.ndarray) -> np.ndarray:
         ...
     
-# TODO: fare in modo che faccia il plot della validazione durante la validazione
 class ModelTrainer(ABC):
     
     @abstractmethod
@@ -23,15 +22,20 @@ class ModelTrainer(ABC):
     def cross_validation(self, size: int, X: np.ndarray, Y: np.ndarray) -> tuple[Model, float]:
         ...
     
-    def fit(self, X: np.ndarray, Y:np.ndarray, cv=5, n_jobs=8, seed=42, patience=100, epochs=1000) -> tuple[Model,float]:
+    def fit(self, X: np.ndarray, Y:np.ndarray, cv=5, n_jobs=8, seed=42, patience=100, epochs=1000) -> tuple[Model,float, list[float]]:
         self.seed = seed
         self.n_job = n_jobs
         self.cv = cv
+        validations = []
         best_model = None
         best_accuracy = None
         no_improve = 0
+
+        history = []  
+        
         for size in tqdm(range(1,epochs+1)):
             model, mean_acc = self.cross_validation(size, X, Y)
+            validations.append(1 - mean_acc)
             if best_accuracy is None or best_accuracy < mean_acc:
                 best_accuracy = mean_acc
                 best_model = model
@@ -39,12 +43,23 @@ class ModelTrainer(ABC):
             else:
                 no_improve += 1
                 if no_improve >= patience:
+                    print(f"Early stopping at epoch {size}")
                     break
-        return best_model, best_accuracy
+        return best_model, best_accuracy, validations
 
+
+def plot_history(history: list[float], model_name: str) -> None:
+    plt.figure(figsize=(8,4))
+    plt.plot(history, label="Mean CV Accuracy", color="blue")
+    plt.xlabel("Epoch")
+    plt.ylabel("Accuracy")
+    plt.title(model_name + " - Validation Accuracy During Training")
+    plt.legend()
+    plt.grid(True)
+    plt.savefig(f"{model_name}_val.png")
 
 def model_selections(models: dict[str, ModelTrainer], X: np.ndarray, Y: np.ndarray,seed=42, n_jobs=8) -> dict[str, Any]:
-    
+    print("[WARNING] model_selections deprecated function")
     rng = np.random.default_rng(seed)
     np.random.seed(seed)
     best_models = {}
@@ -57,19 +72,44 @@ def model_selections(models: dict[str, ModelTrainer], X: np.ndarray, Y: np.ndarr
 
 class LogisticRegressionTrainer(ModelTrainer):
     
-    def fit(self,X: np.ndarray, Y:np.ndarray, cv=5, n_jobs=8, seed=42) -> tuple[Model,float]:
-        model = LogisticRegressionCV(cv=cv,random_state=seed, n_jobs=n_jobs)
+    def get_best_hyperparams(self, model) -> dict[str, Any]:
+        model: LogisticRegressionCV = model
+        return model.get_params(deep=True)
+    
+    def cross_validation(self, size: int, X: np.ndarray, Y: np.ndarray)-> tuple[Model, float]:
+        print("[ERROR] LogisticRegressionTrainer.cross_validation is not implemented, don't call this function Luca SFORZA")
+        exit(1)
+        
+    
+    def fit(self,X: np.ndarray, Y:np.ndarray, cv=5, n_jobs=8, seed=42) -> tuple[Model,float, list]:
+        model = LogisticRegressionCV(cv=cv,random_state=seed, n_jobs=n_jobs, max_iter=10000)
         model.fit(X,Y)
-        mean_acc = np.mean([v.mean() for v in model.scores_.values()])
-        return model, mean_acc
+        total_acc = 0.0
+        for test in [value for (_key, value) in model.scores_.items()][0]:
+            total_acc += test.max()
+        validation_error = []
+        for test in zip(*[value for (_key, value) in model.scores_.items()][0]):
+            tot = 0.0
+            for value in test:
+                tot += value
+            validation_error.append(1.0 - (tot/cv))
+        return self.get_best_hyperparams(model), total_acc/cv, validation_error
     
 class RidgeTrainer(ModelTrainer):
     
-    def fit(self,X: np.ndarray, Y:np.ndarray, cv=5, n_jobs=8, seed=42) -> tuple[Model,float]:
+    def get_best_hyperparams(self, model) -> dict[str, Any]:
+        model: LogisticRegressionCV = model
+        return model.get_params(deep=True)
+    
+    def cross_validation(self, size, X, Y):
+        print("[ERROR] not implemented LogisticRegressionTrainer.cross_validation")
+        exit(1)
+    
+    def fit(self,X: np.ndarray, Y:np.ndarray, cv=5, n_jobs=8, seed=42) -> tuple[Model,float, list]:
         model = RidgeCV(cv=cv)
         model.fit(X,Y)
-        mean_acc = np.mean([v.mean() for v in model.scores_.values()])
-        return model, mean_acc
+        mean_acc = model.best_score_
+        return model, mean_acc, []
     
 class KNeighborsClassifierTrainer(ModelTrainer):
     
@@ -163,7 +203,7 @@ class RandomForestClassifierTrainer(ModelTrainer):
 # Comunque è sempre retro compatibile questo codice
 class DecisionTreeClassifierTrainer(ModelTrainer):
     
-    def fit(self,X: np.ndarray, Y:np.ndarray, cv=5, n_jobs=4, seed=42, patience=20, epochs=1000) -> tuple[Model,float]:
+    def fit(self,X: np.ndarray, Y:np.ndarray, cv=5, n_jobs=8, seed=42, patience=20, epochs=1000) -> tuple[Model,float]:
         kf = KFold(n_splits=cv, shuffle=True, random_state=seed)
         
         best_model = None

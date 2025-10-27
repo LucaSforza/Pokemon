@@ -267,17 +267,21 @@ def main():
         with sqlite3.connect(database_path) as conn:
             X,Y = prepare_data(conn, 0.999)
 
-        models = {
-             "KNN": KNeighborsClassifierTrainer(),
+        #models = {
+            # "KNN": ,
             #"LogisticRegressionCV": LogisticRegressionTrainer(),
             #"DecisionTreeClassifier": DecisionTreeClassifierTrainer(),
             # "RandomForest": RandomForestClassifierTrainer(),
             # "XGB": XGBClassifierTrainer(),
             # "RidgeCV": RidgeTrainer(),
-        }
+        #}
         
-        result = model_selections(models, X,Y, seed=42, n_jobs=4)
-        print(result)
+        model = LogisticRegressionTrainer()
+        
+        best_model, acc, validations = model.fit(X,Y)
+        print(f"Model:\n{json.dump(best_model, indent=2)}")
+        print(f"accuracy: {acc}")
+        plot_history(validations, "LogisticRegressionTrainer")
         
     
     else:
