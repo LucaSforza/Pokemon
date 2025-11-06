@@ -343,12 +343,6 @@ def main():
 
         print(f"Mean validation score: {np.mean(scores):.4f}")
 
-        
-
-
-
-
-
     else:
         print(f"[ERROR] unknown command {command}")
         usage()
