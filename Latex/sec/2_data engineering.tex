@@ -1,0 +1,15 @@
+\section{Data Engineering}
+\label{sec:formatting}
+
+%-------------------------------------------------------------------------
+\subsection{Preliminary Data Analysis}
+An exploratory analysis was first conducted to understand the structure, completeness and consistency of the data. Each sample contains the information of the first player's team and the lead Pokémon of the second player. It also contains the first 30 turns of the battle, where we have desumed the other Pokémons of the second team and the modified stats for every Pokémon involved.
+
+%-------------------------------------------------------------------------
+\subsection{Data Storage and Modeling}
+To ensure data consistency and facilitate efficient querying and preprocessing, all battle data were imported into a relational database.
+
+%-------------------------------------------------------------------------
+\subsection{Feature Selection and Aggregation}
+Given the complexity and granularity of the original data (e.g., individual moves, temporary status effects and ability activations), we opted to focus on a set of aggregate features that could effectively capture the overall performance of each team.
+Specifically, we decided to preserve only the final statistics of the Pokémons belonging to each team after the 30th turn (i.e. Remaining HP, Attack, Defense, Special Attack, Special Defense, Speed, Boost Attack, Boost Defense, Boost Special Attack, Boost Special Defense, Boost Speed, Type, Status). Some features were not in a numerical form (e.g. Type and Status) so we encoded them. In particular, we used a \textbf{\textit{MultiLabelBinarizer}} for Pokémons type, since that they can have up to two types and a \textbf{\textit{OneHotEncoder}} for Pokémons status, since that they can have only one state at a time. Eventually, for each battle, the statistics of all six Pokémon belonging to the same team were aggregated using summary measures, resulting in a single feature vector per team. Subsequently, the feature vector of the second team was subtracted from that of the first team, producing a single representation that captures the difference in strength and composition between the two teams. This approach significantly reduced the dimensionality of the data while retaining the most relevant information for predicting battle outcomes.
