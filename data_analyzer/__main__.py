@@ -270,7 +270,7 @@ def main():
         with sqlite3.connect(database_path) as conn:
             X,Y = prepare_data(conn, 0.999)
         
-        model = DecisionTreeClassifierTrainer()
+        model = LogisticRegressionTrainer()
 
         best_model, acc, validations = model.model_selection(X,Y)
         print(f"Model:\n{json.dumps(best_model, indent=2)}")

@@ -102,5 +102,28 @@
             },
         "seed": 42,
         "accuracy": 0.8151999999999999
+    },
+    "LogisticRegression": {
+        "model": {
+            "Cs": 10,
+            "class_weight": null,
+            "cv": 5,
+            "dual": false,
+            "fit_intercept": true,
+            "intercept_scaling": 1.0,
+            "l1_ratios": null,
+            "max_iter": 10000,
+            "multi_class": "deprecated",
+            "n_jobs": 8,
+            "penalty": "l2",
+            "random_state": 42,
+            "refit": true,
+            "scoring": null,
+            "solver": "lbfgs",
+            "tol": 0.0001,
+            "verbose": 0
+        },
+        "seed": 42,
+        "accuracy": 0.8404999999999999
     }
 }
