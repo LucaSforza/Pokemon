@@ -1,5 +1,5 @@
 {
-    "KKN": {
+    "KNN": {
         "model": {
             "algorithm": "auto",
             "leaf_size": 30,

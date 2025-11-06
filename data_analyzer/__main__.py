@@ -249,12 +249,16 @@ def main():
         Y = Y.drop(columns=["id_battle"])
         X = scale_input(X)    
         
-        model = LogisticRegressionCV(
-            cv=5,
-            random_state=42, 
-            n_jobs=8, 
-            max_iter=10000
+        models_name = ["LogisticRegression", "KNN", "RandomForest", "XSGBoost", "DecisionTree"]
+        estimators = [(name, load_best_model(name)) for name in models_name]
+        final_estimator = LogisticRegressionCV(cv=5, max_iter=10000)  # combines base model predictions
+
+        model = StackingClassifier(
+            estimators=estimators,
+            final_estimator=final_estimator,
+            cv=5 
         )
+
         model.fit(X,Y)
         
         with sqlite3.connect(database_path) as conn:
@@ -279,7 +283,7 @@ def main():
         plot_history(validations, type(model).__name__)
         
     
-    elif "ensable":
+    elif command == "ensable":
         output_file = sys.argv[2]
         files = sys.argv[3:]
         view_file = sys.argv[3]
@@ -298,7 +302,53 @@ def main():
             result.loc[len(result)] = new_entry
         result = result.drop("confidence",axis=1)
         result.to_csv(output_file, index=False)            
+    
+    elif command == "meta_model":
+        # --- Base learners ---
+        models_name = ["LogisticRegression", "KNN", "RandomForest", "XSGBoost", "DecisionTree"]
+
+        estimators = [(name, load_best_model(name)) for name in models_name]
+
+        # --- Meta-learner ---
+        final_estimator = LogisticRegressionCV(cv=5, max_iter=10000)  # combines base model predictions
+
+        # --- Define Stacking ensemble ---
+        stacking_clf = StackingClassifier(
+            estimators=estimators,
+            final_estimator=final_estimator,
+            cv=5 
+        )
+
+        # --- Load data ---
+        with sqlite3.connect(database_path) as conn:
+            X,Y = prepare_data(conn, 0.999)  
+
+        # --- Train and evaluate ---
+        stacking_clf.fit(X, Y)
+
+        scores = []
+        kf = KFold(n_splits=5, shuffle=True, random_state=42)
+
+        for train_idx, valid_idx in kf.split(X, Y):
+            X_train, X_valid = X[train_idx], X[valid_idx]
+            y_train, y_valid = Y[train_idx], Y[valid_idx]
             
+            # Fitta su parte train (che includerà anche i fold interni per il passo meta-learner)
+            stacking_clf.fit(X_train, y_train)
+            
+            # Valuta su validation fold
+            score = stacking_clf.score(X_valid, y_valid)
+            scores.append(score)
+            print(f"Fold validation score: {score:.4f}")
+
+        print(f"Mean validation score: {np.mean(scores):.4f}")
+
+        
+
+
+
+
+
     else:
         print(f"[ERROR] unknown command {command}")
         usage()

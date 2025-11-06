@@ -18,7 +18,8 @@ from sklearn.ensemble import RandomForestClassifier
 from xgboost import XGBClassifier
 from sklearn.linear_model import RidgeCV
 from sklearn.neural_network import MLPClassifier
-from sklearn.model_selection import train_test_split
+from sklearn.ensemble import StackingClassifier
+from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.metrics import mean_squared_error
 from sklearn.metrics import accuracy_score
 from matplotlib import pyplot as plt
@@ -418,3 +419,29 @@ def check_differences(file1: str, file2: str) -> None:
 
     differenze = df1[diff.any(axis=1)]
     print(differenze)
+
+def load_best_model(model_name: str) -> Any:
+    with open("models.json", "r") as f:
+        data = json.load(f)
+    
+    if model_name not in data:
+        print(f"[ERROR] Model {model_name} not found in models.json")
+        exit(1)
+    
+    model_info = data[model_name]
+    params = model_info["model"]
+
+    params = {k: v for k, v in params.items() if v is not None}
+
+    if model_name == "LogisticRegression":
+        return LogisticRegressionCV(**params)
+    elif model_name == "KNN":
+        return KNeighborsClassifier(**params)
+    elif model_name == "RandomForest":
+        return RandomForestClassifier(**params)
+    elif model_name == "XSGBoost":
+        return XGBClassifier(**params)
+    elif model_name == "DecisionTree":
+        return DecisionTreeClassifier(**params)
+    else:
+        print(f"[ERROR] Model {model_name} not recognized")
