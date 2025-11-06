@@ -249,10 +249,11 @@ def main():
         Y = Y.drop(columns=["id_battle"])
         X = scale_input(X)    
         
-        model = KNeighborsClassifier(
-            n_neighbors=28,
-            weights="distance",
-            p=2,
+        model = LogisticRegressionCV(
+            cv=5,
+            random_state=42, 
+            n_jobs=8, 
+            max_iter=10000
         )
         model.fit(X,Y)
         
