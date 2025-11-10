@@ -11,6 +11,7 @@ def usage():
     print("    get_teams <outputfile> <dataset> <game id> <pokemon_file> prendi le squadre che trovi di un certo id")
 
 def main():
+    print(sys.argv)
     try:
         command = sys.argv[1]
     except IndexError:

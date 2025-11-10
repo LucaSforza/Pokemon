@@ -430,8 +430,13 @@ def load_best_model(model_name: str) -> Any:
     
     model_info = data[model_name]
     params = model_info["model"]
+    seed = model_info.get("seed", 42)
 
+    if model_name != "KNN":
+        params["random_state"] = seed
     params = {k: v for k, v in params.items() if v is not None}
+
+    print(f"[INFO] Loading {model_name} with random_state={seed}")
 
     if model_name == "LogisticRegression":
         return LogisticRegressionCV(**params)
@@ -445,3 +450,4 @@ def load_best_model(model_name: str) -> Any:
         return DecisionTreeClassifier(**params)
     else:
         print(f"[ERROR] Model {model_name} not recognized")
+        exit(1)
