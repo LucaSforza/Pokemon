@@ -87,7 +87,7 @@ def load_model(model_name):
     elif model_name == "MetaModel":
         models_name = ["LogisticRegression", "KNN", "RandomForest", "XSGBoost", "DecisionTree"]
         estimators = [(name, load_best_model(name)) for name in models_name]
-        final_estimator = LogisticRegressionCV(cv=5, max_iter=10000, random_state=42)  # combines base model predictions
+        final_estimator = LogisticRegressionCV(cv=5, max_iter=10000, random_state=42)
         
         print(f"Model {model_name} successfully loaded")
         return StackingClassifier(
@@ -95,7 +95,7 @@ def load_model(model_name):
             final_estimator=final_estimator,
             cv=5 
         )
-
+    
     print(f"Please choose one of this models {model_trained + ["MetaModel"]}")
     return 
 
@@ -133,7 +133,7 @@ def result_predictions(db_name, model):
 
     model.fit(X,Y)
     
-    with sqlite3.connect(database_path) as conn:
+    with sqlite3.connect(db_name) as conn:
         cur = conn.cursor()
         X_test, _ = load_datapoints(conn, test=True)
         X_test = X_test.sort_values(by="id_battle")
@@ -153,16 +153,31 @@ create_database(db_name)
 # Load worked data if it hasn't been done before
 data_elaboration(db_name)
 
-# Choose model to use from ()
+# Choose model to use from (["LogisticRegression", "KNN", "RandomForest", "XSGBoost", "DecisionTree", "Ensemble", "MetaModel"])
 model_name = "LogisticRegression"
 
-# Load best parameters for that model 
-model = load_model(model_name)
+if model_name == "Ensemble":
+    models_name = ["LogisticRegression", "KNN", "RandomForest", "XSGBoost", "DecisionTree"]
+    estimators = [(name, load_best_model(name)) for name in models_name]    
+    
+    for (name, estimator) in estimators:
+        result_predictions(db_name, estimator)
+    
+    classifiers = ["LogisticRegression", "KNeighborsClassifier", "RandomForest", "XSGBClassifier", "DecisionTreeClassifier"]
+    submission_file = [c + "-submission.cv" for c in classifiers]
 
-if model == None:
-    exit(1)
+    sys.argv = ["data_analyzer", "ensable", db_name, "SimpleEnsamble-submission.csv"] + submission_file
+    execute_command_data_analyzer()
 
-result_predictions(db_name, model)
+else:
+    # Load best parameters for that model 
+    model = load_model(model_name)
 
+    # Check if the model was successfully loaded
+    if model == None:
+        exit(1)
 
-#TODO AGGIUNGERE STACKING E SIMPLE ENSEMBLE A MODEL.JSON
+    #Create the submission file
+    result_predictions(db_name, model)
+
+check_differences("plt/LogisticRegressionCV-submission.csv", "plt/LogisticRegression-submission.csv")

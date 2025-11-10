@@ -32,5 +32,5 @@ XGBoost & objective=binary:logistic, max\_depth=6, reg\_lambda=0.47 & 0.8290 \\
 
 %-------------------------------------------------------------------------
 \subsection{Ensemble}
-Eventually, a simple ensemble model was implemented by combining the predictions of five base learners: Logistic Regression, K-Nearest Neighbors, Decision Tree, Random Forest and XGBoost. The ensemble prediction was obtained through majority voting among the individual model outputs. This approach provided a more stable and robust performance, leveraging the complementary strengths of both simple and ensemble-based classifiers.
+Eventually, both an ensemble model and a stacking meta-model were implemented using the same five base learners (Logistic Regression, K-Nearest Neighbors, Decision Tree, Random Forest, and XGBoost). The ensemble relied on majority voting among the individual predictions, while the stacking model combined them through a Logistic Regression meta-learner, achieving a more stable and robust performance.
 
