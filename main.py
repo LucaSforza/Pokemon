@@ -69,7 +69,7 @@ def data_elaboration(db_name):
             print("Elaborating and loading data...")
             
             arg2 = "save_" + folder + "_data"
-            sys.argv = ["data_analyzer", arg2, "pokemons.db"]
+            sys.argv = ["data_analyzer", arg2, db_name]
             execute_command_data_analyzer()
 
             print(f"Elaborated data successfully loaded in the db {db_name}.")
@@ -84,8 +84,19 @@ def load_model(model_name):
         model = load_best_model(model_name) 
         print(f"Model {model_name} successfully loaded")
         return model
+    elif model_name == "MetaModel":
+        models_name = ["LogisticRegression", "KNN", "RandomForest", "XSGBoost", "DecisionTree"]
+        estimators = [(name, load_best_model(name)) for name in models_name]
+        final_estimator = LogisticRegressionCV(cv=5, max_iter=10000, random_state=42)  # combines base model predictions
+        
+        print(f"Model {model_name} successfully loaded")
+        return StackingClassifier(
+            estimators=estimators,
+            final_estimator=final_estimator,
+            cv=5 
+        )
 
-    print(f"Please choose one of this models {model_trained}")
+    print(f"Please choose one of this models {model_trained + ["MetaModel"]}")
     return 
 
 def result_predictions(db_name, model):
@@ -108,7 +119,6 @@ def result_predictions(db_name, model):
     with open("pca.json", "r") as f:
         total_importance = json.load(f)
     
-    # calcolo varianza cumulativa
     sorted_items = sorted(total_importance.items(), key=lambda x: x[1], reverse=True)
     values = np.array([v for _, v in sorted_items])
     cum = np.cumsum(values) / np.sum(values)

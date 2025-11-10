@@ -252,7 +252,7 @@ def main():
         
         models_name = ["LogisticRegression", "KNN", "RandomForest", "XSGBoost", "DecisionTree"]
         estimators = [(name, load_best_model(name)) for name in models_name]
-        final_estimator = LogisticRegressionCV(cv=5, max_iter=10000)  # combines base model predictions
+        final_estimator = LogisticRegressionCV(cv=5, max_iter=10000, random_state=42)  # combines base model predictions
 
         model = StackingClassifier(
             estimators=estimators,
@@ -311,7 +311,7 @@ def main():
         estimators = [(name, load_best_model(name)) for name in models_name]
 
         # --- Meta-learner ---
-        final_estimator = LogisticRegressionCV(cv=5, max_iter=10000)  # combines base model predictions
+        final_estimator = LogisticRegressionCV(cv=5, max_iter=10000, random_state=42)
 
         # --- Define Stacking ensemble ---
         stacking_clf = StackingClassifier(
