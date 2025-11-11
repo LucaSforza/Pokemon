@@ -38,7 +38,7 @@
         "seed": 383329927,
         "accuracy": 0.8304
     },
-    "XSGBoost": {
+    "XGBoost": {
         "model": {
             "objective": "binary:logistic",
             "base_score": null,

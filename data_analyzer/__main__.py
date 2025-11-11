@@ -250,7 +250,7 @@ def main():
         Y = Y.drop(columns=["id_battle"])
         X = scale_input(X)    
         
-        models_name = ["LogisticRegression", "KNN", "RandomForest", "XSGBoost", "DecisionTree"]
+        models_name = ["LogisticRegression", "KNN", "RandomForest", "XGBoost", "DecisionTree"]
         estimators = [(name, load_best_model(name)) for name in models_name]
         final_estimator = LogisticRegressionCV(cv=5, max_iter=10000, random_state=42)  # combines base model predictions
 
@@ -306,7 +306,7 @@ def main():
     
     elif command == "meta_model":
         # --- Base learners ---
-        models_name = ["LogisticRegression", "KNN", "RandomForest", "XSGBoost", "DecisionTree"]
+        models_name = ["LogisticRegression", "KNN", "RandomForest", "XGBoost", "DecisionTree"]
 
         estimators = [(name, load_best_model(name)) for name in models_name]
 

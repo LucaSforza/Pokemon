@@ -444,7 +444,7 @@ def load_best_model(model_name: str) -> Any:
         return KNeighborsClassifier(**params)
     elif model_name == "RandomForest":
         return RandomForestClassifier(**params)
-    elif model_name == "XSGBoost":
+    elif model_name == "XGBoost":
         return XGBClassifier(**params)
     elif model_name == "DecisionTree":
         return DecisionTreeClassifier(**params)
