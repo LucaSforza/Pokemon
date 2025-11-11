@@ -2,9 +2,7 @@
 
 %-------------------------------------------------------------------------
 \subsection{Models and Parameters}
-After the data engineering phase, several machine learning models were trained and optimized to predict the outcome of each Pokémon battle. 
-Hyperparameter tuning was conducted through a combination of grid and randomized search strategies, using validation accuracy as the main performance metric. 
-The best configurations and their corresponding accuracies are summarized in Table~\ref{tab:best_params}.
+After that, a \textit{model selection} process was carried out by training and optimizing several machine learning models to predict the outcome of each Pokémon battle. Hyperparameter tuning was performed through a combination of grid and randomized search strategies, using validation accuracy as the main performance metric. The best configurations and their corresponding accuracies are summarized in Table.~\ref{tab:best_params}.
 
 \begin{table}[h!]
 \centering
@@ -32,5 +30,5 @@ XGBoost & objective=binary:logistic, max\_depth=6, reg\_lambda=0.47 & 0.8290 \\
 
 %-------------------------------------------------------------------------
 \subsection{Ensemble}
-Eventually, both an ensemble model and a stacking meta-model were implemented using the same five base learners (Logistic Regression, K-Nearest Neighbors, Decision Tree, Random Forest, and XGBoost). The ensemble relied on majority voting among the individual predictions, while the stacking model combined them through a Logistic Regression meta-learner, achieving a more stable and robust performance.
+Eventually, both an ensemble model and a stacking meta-model were implemented using the same five base learners (Logistic Regression, K-Nearest Neighbors, Decision Tree, Random Forest and XGBoost). The ensemble relied on majority voting among the individual predictions, while the stacking model combined them through a Logistic Regression meta-learner, achieving a more stable and robust performance.
 
