@@ -31,7 +31,7 @@
             "n_estimators": 100,
             "n_jobs": null,
             "oob_score": false,
-            "random_state": null,
+            "random_state": 383329927,
             "verbose": 0,
             "warm_start": false
         },
