@@ -1,9 +1,10 @@
 import sys 
 import os
 
+
 sys.path.append(os.path.join(os.path.dirname(__file__), 'data_analyzer'))
 
-from lib import *
+from data_analyzer import *
 import importlib.util
 
 def execute_command_data_analyzer():
@@ -13,8 +14,6 @@ def execute_command_data_analyzer():
     spec = importlib.util.spec_from_file_location("data_analyzer_main", main_file)
     data_analyzer_main = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(data_analyzer_main)
-
-    data_analyzer_main.main()
 
 
 def create_database(db_name):    
@@ -48,8 +47,9 @@ def data_elaboration(db_name):
         cursor = conn.cursor()
 
         # Check if the elaborated data (train and test) tables already exists and contains data
-        for folder in ["test", "train"]:
+        for i,folder in enumerate(["test", "train"]):
             table = 'TestInput' if folder == "test" else 'Input'
+            print(f"[INFO] {i} {folder} {table}")
             
             cursor.execute("""
                 SELECT name
@@ -59,7 +59,7 @@ def data_elaboration(db_name):
             table_exists = cursor.fetchone() is not None
 
             if table_exists:
-                cursor.execute("SELECT COUNT(*) FROM TestInput;")
+                cursor.execute(f"SELECT COUNT(*) FROM {table};")
                 count = cursor.fetchone()[0]
                 print(count)
                 if count > 0:
@@ -93,10 +93,10 @@ def load_model(model_name):
         return StackingClassifier(
             estimators=estimators,
             final_estimator=final_estimator,
-            cv=5 
+            cv=5 # TODO: random state
         )
-    
-    print(f"Please choose one of this models {model_trained + ["MetaModel"]}")
+    model_trained.append("MetaModel")
+    print(f"Please choose one of this models {model_trained}")
     return 
 
 def result_predictions(db_name, model):
@@ -116,7 +116,7 @@ def result_predictions(db_name, model):
     
     total_importance = None
     
-    with open("pca.json", "r") as f:
+    with open("pca.json", "r") as f: # TODO: riproducibile pca.json
         total_importance = json.load(f)
     
     sorted_items = sorted(total_importance.items(), key=lambda x: x[1], reverse=True)
@@ -147,37 +147,28 @@ def result_predictions(db_name, model):
 
 db_name = "pokemon.db"
 
+# Choose model to use from (["LogisticRegression", "KNN", "RandomForest", "XGBoost", "DecisionTree", "Ensemble", "MetaModel"])
+try:
+    model_name = sys.argv[1]
+except IndexError:
+    print("[ERROR] please specify the model to generate, example: python3 main.py LogisticRegression\n Possible combiantions: LogisticRegression, RandomForest, MetaModel")
+    exit(1)
 # Create db and upload data if it hasn't been done before
+print("[INFO] create database")
 create_database(db_name)
 
 # Load worked data if it hasn't been done before
+print("[INFO] data elaboration")
 data_elaboration(db_name)
 
-# Choose model to use from (["LogisticRegression", "KNN", "RandomForest", "XGBoost", "DecisionTree", "Ensemble", "MetaModel"])
-model_name = "Ensemble"
 
-if model_name == "Ensemble":
-    models_name = ["LogisticRegression", "KNN", "RandomForest", "XGBoost", "DecisionTree"]
-    estimators = [(name, load_best_model(name)) for name in models_name]    
-    
-    for (name, estimator) in estimators:
-        result_predictions(db_name, estimator)
-    
-    classifiers = ["LogisticRegressionCV", "KNeighborsClassifier", "RandomForest", "XGBClassifier", "DecisionTreeClassifier"]
-    submission_file = ["plt/" + c + "-submission.csv" for c in classifiers]
+model = load_model(model_name)
 
-    sys.argv = ["data_analyzer", "ensable", db_name, "plt/ensable-submission1.csv"] + submission_file
-    execute_command_data_analyzer()
+# Check if the model was successfully loaded
+if model == None:
+    exit(1)
 
-else:
-    # Load best parameters for that model 
-    model = load_model(model_name)
-
-    # Check if the model was successfully loaded
-    if model == None:
-        exit(1)
-
-    #Create the submission file
-    result_predictions(db_name, model)
+#Create the submission file
+result_predictions(db_name, model)
 
 # check_differences("plt/LogisticRegressionCV-submission.csv", "plt/LogisticRegression-submission.csv")
