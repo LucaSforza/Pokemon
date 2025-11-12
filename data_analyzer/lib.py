@@ -435,6 +435,7 @@ def load_best_model(model_name: str) -> Any:
     if model_name != "KNN":
         params["random_state"] = seed
     params = {k: v for k, v in params.items() if v is not None and v != "deprecated"}
+    print(params)
 
     print(f"[INFO] Loading {model_name} with random_state={seed}")
 
