@@ -148,11 +148,8 @@ def result_predictions(db_name, model):
 db_name = "pokemon.db"
 
 # Choose model to use from (["LogisticRegression", "KNN", "RandomForest", "XGBoost", "DecisionTree", "Ensemble", "MetaModel"])
-try:
-    model_name = sys.argv[1]
-except IndexError:
-    print("[ERROR] please specify the model to generate, example: python3 main.py LogisticRegression\n Possible combiantions: LogisticRegression, RandomForest, MetaModel")
-    exit(1)
+    
+models = ["LogisticRegression", "RandomForest", "MetaModel"]
 # Create db and upload data if it hasn't been done before
 print("[INFO] create database")
 create_database(db_name)
@@ -161,14 +158,13 @@ create_database(db_name)
 print("[INFO] data elaboration")
 data_elaboration(db_name)
 
+for model_name in models:
 
-model = load_model(model_name)
+    model = load_model(model_name)
 
-# Check if the model was successfully loaded
-if model == None:
-    exit(1)
+    # Check if the model was successfully loaded
+    if model == None:
+        exit(1)
 
-#Create the submission file
-result_predictions(db_name, model)
-
-# check_differences("plt/LogisticRegressionCV-submission.csv", "plt/LogisticRegression-submission.csv")
+    #Create the submission file
+    result_predictions(db_name, model)
