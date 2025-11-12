@@ -4,7 +4,6 @@
 *.log
 *.gz
 
-input/
 .vscode/
 
 .$*
@@ -16,3 +15,7 @@ chall/
 
 sw_*
 *.png
+
+!pokemon.db
+
+input/*
