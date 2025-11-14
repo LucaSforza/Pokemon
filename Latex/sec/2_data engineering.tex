@@ -7,4 +7,21 @@ An exploratory analysis was first conducted to understand the structure, complet
 
 %-------------------------------------------------------------------------
 \subsection{Feature Selection and Aggregation}
-Given the complexity and granularity of the original data (e.g., individual moves, temporary status effects and ability activations), we opted to focus on a set of aggregate features that could effectively capture the overall performance of each team. Specifically, we decided to preserve only the final statistics of the Pokémons belonging to each team after the 30th turn (i.e., Final HP, Attack, Defense, Special Attack and Defense, Speed, Boosts, Type, Status). Some features were not in numerical form (e.g., Type and Status), so we encoded them using a \textit{MultiLabelBinarizer} for Pokémon types (since they can have up to two) and a \textit{OneHotEncoder} for Pokémon status (since they can have only one state at a time). Eventually, for each battle, the statistics of all six Pokémon belonging to the same team were aggregated using summary measures, resulting in a single feature vector per team. Subsequently, the feature vector of the second team was subtracted from that of the first, producing a single representation that captures the difference in strength and composition between the two teams. Finally, a PCA was applied to the resulting data, retaining only the features that explained 99\% of the variance: \textit{Final HP, Attack, Defense, Special Attack, Special Defense, Speed, No Status, Status Fainted and Paralyzed, Psychic, Normal, Water Grass, Rock, Ground, Flying, Poison Types}. This approach significantly reduced the dimensionality of the data while preserving the most relevant information for predicting battle outcomes.
+Given the complexity and granularity of the original data 
+(e.g., individual moves, temporary status effects and ability activations),
+we opted to focus on a set of aggregate features that could effectively capture 
+the overall performance of each team. Specifically, we decided to preserve only 
+the final statistics of the Pokémons belonging to each team after the 30th turn 
+(i.e., Final HP, Attack, Defense, Special Attack and Defense, Speed, Boosts, Type, Status). 
+Some features were not in numerical form (e.g., Type and Status), so we encoded them using a 
+\textit{MultiLabelBinarizer} for Pokémon types (since they can have up to two) and a 
+\textit{OneHotEncoder} for Pokémon status (since they can have only one state at a time). 
+Eventually, for each battle, the statistics of all six Pokémon belonging to the same team were 
+aggregated using summary measures, resulting in a single feature vector per team. Subsequently, 
+the feature vector of the second team was subtracted from that of the first, producing a single 
+representation that captures the difference in strength and composition between the two teams. 
+Finally, a PCA was applied to the resulting data, retaining only the features that explained 99.9\% 
+of the variance: \textit{Final HP, Attack, Defense, Special Attack, Special Defense, Speed, No Status, 
+Status Fainted and Paralyzed, Psychic, Normal, Water Grass, Rock, Ground, Flying, Poison Types}. 
+This approach significantly reduced the dimensionality of the data while preserving the most relevant 
+information for predicting battle outcomes.
